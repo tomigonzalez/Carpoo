@@ -1,9 +1,8 @@
 # Carpoo 🚗
 
-**Viajes compartidos entre pueblos, sin grupos de WhatsApp desordenados.**
+**Viajes compartidos entre pueblos, sin grupos de WhatsApp .**
 
-Carpoo conecta a personas que viajan entre pueblos y ciudades cercanas (Villarino, Médanos,
-Bahía Blanca y alrededores). Un conductor publica su viaje (origen, destino, día, hora y
+Carpoo conecta a personas que viajan entre pueblos y ciudades cercanas). Un conductor publica su viaje (origen, destino, día, hora y
 asientos libres) y un pasajero reserva su asiento en un par de toques. El cupo se descuenta
 **en tiempo real** y, al confirmar, la app conecta a ambas partes con un **botón directo de
 WhatsApp** para arreglar el pago y el punto de encuentro.
