@@ -1,0 +1,118 @@
+// Base de datos para el MVP de Carpoo (viajes compartidos entre pueblos).
+// SQLite: un solo archivo, no requiere instalar nada más. Ideal para probar y
+// para un despliegue chico en un VPS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Persona registrada (conductor y/o pasajero).
+/// No hay perfiles anónimos: todo viaje y reserva cuelga de una cuenta real.
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String?  @unique
+  image         String? // foto de perfil (URL)
+  provider      String // "google" | "facebook" | "demo"
+  providerId    String? // id del usuario en Google/Facebook
+
+  // Verificación de identidad
+  phone         String? // teléfono normalizado, ej: +5491122334455
+  phoneVerified Boolean  @default(false)
+  phoneCode     String? // código de 6 dígitos pendiente
+  phoneCodeExp  DateTime?
+
+  // Datos del auto (opcionales hasta que ofrezca un viaje)
+  carModel      String?
+  carPlate      String?
+  carColor      String?
+
+  // Rol de administración (para moderar denuncias en el futuro)
+  isAdmin       Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+
+  trips         Trip[]        @relation("DriverTrips")
+  reservations  Reservation[]
+  givenReviews  Review[]      @relation("ReviewAuthor")
+  receivedReviews Review[]    @relation("ReviewTarget")
+
+  @@unique([provider, providerId])
+}
+
+enum TripStatus {
+  ACTIVE // con asientos disponibles
+  FULL // completo
+  CANCELLED // cancelado por el conductor
+  DONE // ya se realizó
+}
+
+model Trip {
+  id          String     @id @default(cuid())
+  driverId    String
+  driver      User       @relation("DriverTrips", fields: [driverId], references: [id], onDelete: Cascade)
+
+  origin      String
+  destination String
+  dateTime    DateTime // fecha + hora de salida
+  seatsTotal  Int
+  seatsTaken  Int        @default(0) // se descuenta al reservar, en tiempo real
+  contribution String? // texto libre: "A convenir", "$3000 por persona"
+  notes       String? // aclaraciones: punto de encuentro, equipaje, etc.
+  status      TripStatus @default(ACTIVE)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  reservations Reservation[]
+  reviews      Review[]
+
+  @@index([origin, destination, dateTime])
+  @@index([driverId])
+}
+
+enum ReservationStatus {
+  CONFIRMED // reservado, todavía no sabemos si asistió
+  CANCELLED // el pasajero canceló (libera el asiento)
+  ATTENDED // viajó / asistió
+  NO_SHOW // reservó y no apareció
+}
+
+model Reservation {
+  id          String            @id @default(cuid())
+  tripId      String
+  trip        Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  passengerId String
+  passenger   User              @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  status      ReservationStatus @default(CONFIRMED)
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([tripId, passengerId]) // una sola reserva por persona y viaje
+  @@index([passengerId])
+}
+
+/// Calificación de 1 a 5 estrellas + comentario corto, al finalizar el viaje.
+model Review {
+  id        String   @id @default(cuid())
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  targetId  String
+  target    User     @relation("ReviewTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  rating    Int // 1..5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([tripId, authorId, targetId]) // una reseña por persona y viaje
+  @@index([targetId])
+}

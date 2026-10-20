@@ -1,0 +1,462 @@
+@import "tailwindcss";
+
+/*
+  Diseño pensado para que lo entienda cualquier persona, incluso sin costumbre
+  de usar apps: letras grandes, botones anchos, colores con mucho contraste.
+*/
+
+:root {
+  --fondo: #f2f5f8;
+  --superficie: #ffffff;
+  --texto: #10151c;
+  --texto-suave: #4a5560;
+  --borde: #ccd5df;
+  --marca: #0b4fd6;
+  --marca-oscura: #073a9e;
+  --verde: #0b6b39;
+  --verde-claro: #e6f6ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --amarillo: #8a5a00;
+  --amarillo-claro: #fff5da;
+  --radio: 16px;
+}
+
+@theme inline {
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-borde: var(--borde);
+  --color-marca: var(--marca);
+  --color-marca-oscura: var(--marca-oscura);
+  --color-verde: var(--verde);
+  --color-rojo: var(--rojo);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 18px; /* Base grande: se lee sin esfuerzo desde el celular. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  margin: 0;
+}
+
+a {
+  color: var(--marca);
+}
+
+:focus-visible {
+  outline: 3px solid var(--marca);
+  outline-offset: 2px;
+}
+
+/* ---------- Estructura ---------- */
+
+.contenedor {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.pagina {
+  padding: 20px 0 96px; /* Espacio para la barra de abajo en el celular. */
+}
+
+.encabezado {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--superficie);
+  border-bottom: 2px solid var(--borde);
+}
+
+.encabezado-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 64px;
+}
+
+.marca-app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.marca-logo {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--marca);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1.3rem;
+}
+
+/* ---------- Tarjetas ---------- */
+
+.tarjeta {
+  background: var(--superficie);
+  border: 2px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 18px;
+}
+
+.tarjeta + .tarjeta {
+  margin-top: 14px;
+}
+
+.tarjeta-titulo {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+
+/* ---------- Botones ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 20px;
+  border-radius: var(--radio);
+  border: 2px solid transparent;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.btn:active {
+  transform: scale(0.99);
+}
+
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primario {
+  background: var(--marca);
+  color: #fff;
+}
+
+.btn-primario:hover {
+  background: var(--marca-oscura);
+}
+
+.btn-verde {
+  background: var(--verde);
+  color: #fff;
+}
+
+.btn-verde:hover {
+  background: #08522c;
+}
+
+.btn-secundario {
+  background: var(--superficie);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+
+.btn-secundario:hover {
+  background: #eef2f7;
+}
+
+.btn-peligro {
+  background: var(--rojo-claro);
+  color: var(--rojo);
+  border-color: #f3c8c4;
+}
+
+.btn-chico {
+  width: auto;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+}
+
+.fila-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fila-botones > * {
+  flex: 1 1 140px;
+}
+
+/* ---------- Formularios ---------- */
+
+.campo {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.etiqueta {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+.ayuda {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
+.entrada {
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 14px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 2px solid var(--borde);
+  border-radius: 12px;
+}
+
+.entrada:focus {
+  border-color: var(--marca);
+}
+
+textarea.entrada {
+  min-height: 110px;
+  resize: vertical;
+}
+
+/* ---------- Mensajes ---------- */
+
+.alerta {
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  border: 2px solid transparent;
+}
+
+.alerta-error {
+  background: var(--rojo-claro);
+  color: var(--rojo);
+  border-color: #f3c8c4;
+}
+
+.alerta-ok {
+  background: var(--verde-claro);
+  color: var(--verde);
+  border-color: #bfe3cd;
+}
+
+.alerta-info {
+  background: var(--amarillo-claro);
+  color: var(--amarillo);
+  border-color: #f0dcae;
+}
+
+/* ---------- Etiquetas y datos ---------- */
+
+.etiqueta-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.estado-ok {
+  background: var(--verde-claro);
+  color: var(--verde);
+}
+
+.estado-aviso {
+  background: var(--amarillo-claro);
+  color: var(--amarillo);
+}
+
+.estado-gris {
+  background: #e8ecf1;
+  color: var(--texto-suave);
+}
+
+.estado-rojo {
+  background: var(--rojo-claro);
+  color: var(--rojo);
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--borde);
+  background: #e8ecf1;
+  flex-shrink: 0;
+}
+
+.avatar-chico {
+  width: 44px;
+  height: 44px;
+}
+
+.dato {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--borde);
+}
+
+.dato:last-child {
+  border-bottom: none;
+}
+
+.dato-clave {
+  color: var(--texto-suave);
+}
+
+.dato-valor {
+  font-weight: 700;
+  text-align: right;
+}
+
+.lista-limpia {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Barra inferior (celular) ---------- */
+
+.barra-abajo {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--superficie);
+  border-top: 2px solid var(--borde);
+  display: flex;
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+
+.barra-abajo a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.barra-abajo a[data-activo="true"] {
+  color: var(--marca);
+  background: #e8effc;
+}
+
+.barra-abajo svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---------- Calificación con estrellas ---------- */
+
+.estrellas-grupo {
+  display: flex;
+  gap: 8px;
+}
+
+.estrellas-grupo label {
+  flex: 1;
+  position: relative;
+}
+
+.estrellas-grupo input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.estrellas-grupo span {
+  display: block;
+  text-align: center;
+  padding: 12px 2px;
+  border: 2px solid var(--borde);
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--superficie);
+  font-size: 0.95rem;
+}
+
+.estrellas-grupo input:checked + span {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: #fff;
+}
+
+.estrellas-grupo input:focus-visible + span {
+  outline: 3px solid var(--marca);
+  outline-offset: 2px;
+}
+
+/* ---------- Detalles chicos ---------- */
+
+.oculto-visual {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .btn-ancho-auto {
+    width: auto;
+  }
+}
