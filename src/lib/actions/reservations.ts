@@ -15,19 +15,19 @@ function refreshViews(tripId?: string) {
 }
 
 /**
- * Reservar un asiento. Todo pasa dentro de una transacción para que dos
- * personas no puedan quedarse con el último lugar al mismo tiempo.
+ * Solicitar un asiento. La solicitud queda PENDING hasta que el conductor la acepte.
+ * No se descuenta cupo hasta la aceptación.
  */
-export async function reserveSeat(
+export async function requestSeat(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!user) return { error: "Primero iniciá sesión para reservar." };
+  if (!user) return { error: "Primero iniciá sesión para solicitar un asiento." };
   if (!isProfileComplete(user)) {
     return {
       error:
-        "Para reservar necesitás foto de perfil y teléfono verificado. Completá tu perfil y volvé a intentar.",
+        "Para solicitar un asiento necesitás foto de perfil y teléfono verificado. Completá tu perfil y volvé a intentar.",
     };
   }
 
@@ -41,46 +41,49 @@ export async function reserveSeat(
       if (trip.status === "CANCELLED") throw new Error("Ese viaje fue cancelado.");
       if (trip.status === "DONE") throw new Error("Ese viaje ya se realizó.");
       if (trip.dateTime.getTime() < Date.now()) throw new Error("Ese viaje ya salió.");
-      if (trip.seatsTaken >= trip.seatsTotal) throw new Error("Se acaba de llenar. Probá con otro viaje.");
+
+      const confirmedCount = await tx.reservation.count({
+        where: { tripId, status: "CONFIRMED" },
+      });
+      if (confirmedCount >= trip.seatsTotal) throw new Error("Se acaba de llenar. Probá con otro viaje.");
 
       const existing = await tx.reservation.findUnique({
         where: { tripId_passengerId: { tripId, passengerId: user.id } },
       });
-      if (existing && existing.status === "CONFIRMED") {
-        throw new Error("Ya tenés una reserva en este viaje.");
-      }
-
-      const taken = await tx.trip.updateMany({
-        where: { id: tripId, status: "ACTIVE", seatsTaken: { lt: trip.seatsTotal } },
-        data: { seatsTaken: { increment: 1 } },
-      });
-      if (taken.count === 0) throw new Error("Se acaba de llenar. Probá con otro viaje.");
-
       if (existing) {
+        if (existing.status === "CONFIRMED") {
+          throw new Error("Ya tenés un asiento confirmado en este viaje.");
+        }
+        if (existing.status === "PENDING") {
+          throw new Error("Ya enviaste una solicitud para este viaje.");
+        }
+        if (existing.status === "ATTENDED") {
+          throw new Error("Ya viajaste en este viaje.");
+        }
         await tx.reservation.update({
           where: { id: existing.id },
-          data: { status: "CONFIRMED" },
+          data: { status: "PENDING" },
         });
       } else {
-        await tx.reservation.create({ data: { tripId, passengerId: user.id } });
-      }
-
-      const after = await tx.trip.findUnique({ where: { id: tripId } });
-      if (after && after.seatsTaken >= after.seatsTotal) {
-        await tx.trip.update({ where: { id: tripId }, data: { status: "FULL" } });
+        await tx.reservation.create({
+          data: { tripId, passengerId: user.id, status: "PENDING" },
+        });
       }
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "No pudimos completar la reserva.";
+      error instanceof Error ? error.message : "No pudimos enviar la solicitud.";
     return { error: message };
   }
 
   refreshViews(tripId);
-  return { ok: "¡Reserva confirmada! Ya podés escribirle por WhatsApp al conductor." };
+  return { ok: "Solicitud enviada. El conductor la va a revisar y te va a avisar." };
 }
 
-/** El pasajero cancela su reserva: el asiento vuelve a quedar libre. */
+/** Compatibilidad: mantiene nombre anterior apuntando al nuevo flujo. */
+export const reserveSeat = requestSeat;
+
+/** El pasajero cancela su solicitud o su reserva confirmada. */
 export async function cancelMyReservation(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
@@ -90,19 +93,26 @@ export async function cancelMyReservation(formData: FormData): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const reservation = await tx.reservation.findUnique({ where: { id: reservationId } });
     if (!reservation || reservation.passengerId !== user.id) return;
-    if (reservation.status !== "CONFIRMED") return;
+    if (reservation.status === "CANCELLED" || reservation.status === "ATTENDED" || reservation.status === "NO_SHOW") return;
 
-    await tx.reservation.update({
-      where: { id: reservationId },
-      data: { status: "CANCELLED" },
-    });
-    await tx.trip.update({
-      where: { id: reservation.tripId },
-      data: {
-        seatsTaken: { decrement: 1 },
-        status: "ACTIVE",
-      },
-    });
+    if (reservation.status === "CONFIRMED") {
+      await tx.reservation.update({
+        where: { id: reservationId },
+        data: { status: "CANCELLED" },
+      });
+      await tx.trip.update({
+        where: { id: reservation.tripId },
+        data: {
+          seatsTaken: { decrement: 1 },
+          status: "ACTIVE",
+        },
+      });
+    } else if (reservation.status === "PENDING") {
+      await tx.reservation.update({
+        where: { id: reservationId },
+        data: { status: "CANCELLED" },
+      });
+    }
   });
 
   refreshViews();
@@ -125,6 +135,73 @@ export async function confirmMyAttendance(formData: FormData): Promise<void> {
     where: { id: reservationId },
     data: { status: "ATTENDED" },
   });
+  refreshViews(reservation.tripId);
+}
+
+/** El conductor acepta una solicitud pendiente. */
+export async function acceptRequest(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const reservationId = String(formData.get("reservationId") ?? "");
+
+  await prisma.$transaction(async (tx) => {
+    const reservation = await tx.reservation.findUnique({
+      where: { id: reservationId },
+      include: { trip: true },
+    });
+    if (!reservation) return;
+    if (reservation.trip.driverId !== user.id) return;
+    if (reservation.status !== "PENDING") return;
+    if (reservation.trip.status === "CANCELLED") return;
+    if (reservation.trip.status === "DONE") return;
+    if (reservation.trip.dateTime.getTime() < Date.now()) return;
+
+    const confirmedCount = await tx.reservation.count({
+      where: { tripId: reservation.tripId, status: "CONFIRMED" },
+    });
+    if (confirmedCount >= reservation.trip.seatsTotal) return;
+
+    const taken = await tx.trip.updateMany({
+      where: { id: reservation.tripId, seatsTaken: { lt: reservation.trip.seatsTotal } },
+      data: { seatsTaken: { increment: 1 } },
+    });
+    if (taken.count === 0) return;
+
+    await tx.reservation.update({
+      where: { id: reservationId },
+      data: { status: "CONFIRMED" },
+    });
+
+    const after = await tx.trip.findUnique({ where: { id: reservation.tripId } });
+    if (after && after.seatsTaken >= after.seatsTotal) {
+      await tx.trip.update({ where: { id: reservation.tripId }, data: { status: "FULL" } });
+    }
+  });
+
+  refreshViews();
+}
+
+/** El conductor rechaza una solicitud pendiente. */
+export async function rejectRequest(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const reservationId = String(formData.get("reservationId") ?? "");
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    include: { trip: true },
+  });
+  if (!reservation) return;
+  if (reservation.trip.driverId !== user.id) return;
+  if (reservation.status !== "PENDING") return;
+
+  await prisma.reservation.update({
+    where: { id: reservationId },
+    data: { status: "CANCELLED" },
+  });
+
   refreshViews(reservation.tripId);
 }
 

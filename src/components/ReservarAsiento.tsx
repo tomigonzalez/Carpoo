@@ -1,39 +1,29 @@
 "use client";
 
 import { useActionState } from "react";
-import { reserveSeat } from "@/lib/actions/reservations";
+import { requestSeat } from "@/lib/actions/reservations";
 import { emptyActionState } from "@/lib/action-state";
-import { Alerta, BotonWhatsApp } from "@/components/ui";
+import { Alerta } from "@/components/ui";
 import { BotonEnviar } from "@/components/BotonEnviar";
 
-/** Botón de reservar asiento + el paso siguiente: abrir el chat de WhatsApp. */
+/** Botón para solicitar asiento. El conductor debe aceptar antes de ocupar un lugar. */
 export function ReservarAsiento({
   tripId,
-  driverName,
-  driverPhone,
-  mensajeWhatsApp,
 }: {
   tripId: string;
-  driverName: string;
-  driverPhone: string | null;
-  mensajeWhatsApp: string;
+  driverName?: string;
+  driverPhone?: string | null;
+  mensajeWhatsApp?: string;
 }) {
-  const [estado, accion] = useActionState(reserveSeat, emptyActionState);
+  const [estado, accion] = useActionState(requestSeat, emptyActionState);
 
   if (estado.ok) {
     return (
-      <div className="tarjeta" style={{ borderColor: "var(--verde)" }}>
+      <div className="tarjeta">
         <Alerta tipo="ok">{estado.ok}</Alerta>
-        <p style={{ marginTop: 0 }}>
-          Ahora coordiná con <strong>{driverName}</strong> el pago y el punto de encuentro:
+        <p style={{ margin: "8px 0 0", color: "var(--texto-suave)" }}>
+          Cuando el conductor acepte la solicitud te va a aparecer el botón para escribirle por WhatsApp desde este viaje o desde "Mis reservas".
         </p>
-        {driverPhone ? (
-          <BotonWhatsApp telefono={driverPhone} mensaje={mensajeWhatsApp} />
-        ) : (
-          <Alerta tipo="info">
-            El conductor todavía no cargó su teléfono. Vas a poder escribirle desde “Mis reservas”.
-          </Alerta>
-        )}
       </div>
     );
   }
@@ -43,10 +33,10 @@ export function ReservarAsiento({
       <input type="hidden" name="tripId" value={tripId} />
       {estado.error ? <Alerta tipo="error">{estado.error}</Alerta> : null}
       <p style={{ marginTop: 0, marginBottom: 12, color: "var(--texto-suave)" }}>
-        Al reservar se descuenta 1 asiento y le avisamos al conductor con tus datos.
+        El lugar no se descuenta hasta que el conductor acepte tu solicitud.
       </p>
-      <BotonEnviar variante="primario" enviando="Reservando…">
-        ✅ Reservar asiento
+      <BotonEnviar variante="primario" enviando="Enviando…">
+        Solicitar asiento
       </BotonEnviar>
     </form>
   );

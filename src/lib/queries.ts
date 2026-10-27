@@ -65,7 +65,7 @@ export async function getTripDetail(tripId: string) {
   });
 }
 
-/** Panel del conductor: sus viajes, con los pasajeros anotados. */
+/** Panel del conductor: sus viajes, con solicitudes y pasajeros anotados. */
 export async function getTripsAsDriver(driverId: string) {
   return prisma.trip.findMany({
     where: { driverId },
@@ -73,7 +73,7 @@ export async function getTripsAsDriver(driverId: string) {
     take: 50,
     include: {
       reservations: {
-        where: { status: { in: ["CONFIRMED", "ATTENDED", "NO_SHOW"] } },
+        where: { status: { in: ["PENDING", "CONFIRMED", "ATTENDED", "NO_SHOW", "CANCELLED"] } },
         orderBy: { createdAt: "asc" },
         include: { passenger: { select: { id: true, name: true, image: true, phone: true } } },
       },

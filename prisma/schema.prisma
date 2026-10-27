@@ -79,10 +79,11 @@ model Trip {
 }
 
 enum ReservationStatus {
-  CONFIRMED // reservado, todavía no sabemos si asistió
-  CANCELLED // el pasajero canceló (libera el asiento)
-  ATTENDED // viajó / asistió
-  NO_SHOW // reservó y no apareció
+  PENDING   // solicitud enviada, esperando aprobación del conductor
+  CONFIRMED // aceptada por el conductor, ya ocupa un asiento
+  CANCELLED // rechazada por el conductor o cancelada
+  ATTENDED  // viajó / asistió
+  NO_SHOW   // reservó y no apareció
 }
 
 model Reservation {
@@ -91,7 +92,7 @@ model Reservation {
   trip        Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
   passengerId String
   passenger   User              @relation(fields: [passengerId], references: [id], onDelete: Cascade)
-  status      ReservationStatus @default(CONFIRMED)
+  status      ReservationStatus @default(PENDING)
 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt

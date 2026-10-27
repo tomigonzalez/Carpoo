@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { setTripStatus } from "@/lib/actions/trips";
-import { markPassengerStatus } from "@/lib/actions/reservations";
+import { acceptRequest, markPassengerStatus, rejectRequest } from "@/lib/actions/reservations";
 import { formatRelativeDay, formatTripDate, isPast } from "@/lib/format";
 import { mensajeConductor } from "@/lib/messages";
 import { prettyPhone } from "@/lib/validate";
@@ -25,7 +25,7 @@ type Trip = {
   }>;
 };
 
-/** Un viaje del conductor: cupos, pasajeros anotados y botones de estado. */
+/** Un viaje del conductor: solicitudes, pasajeros anotados y botones de estado. */
 export function PanelViajeConductor({
   trip,
   nombreConductor,
@@ -35,6 +35,7 @@ export function PanelViajeConductor({
 }) {
   const libres = Math.max(trip.seatsTotal - trip.seatsTaken, 0);
   const yaSalio = isPast(trip.dateTime);
+  const pendientes = trip.reservations.filter((r) => r.status === "PENDING");
   const activos = trip.reservations.filter((r) => r.status === "CONFIRMED");
 
   return (
@@ -72,16 +73,56 @@ export function PanelViajeConductor({
         {trip.contribution ? ` · Aporte: ${trip.contribution}` : ""}
       </p>
 
-      <h3 style={{ marginTop: 16, fontSize: "1.05rem" }}>Pasajeros anotados</h3>
-      {activos.length === 0 && trip.reservations.length === 0 ? (
+      {pendientes.length > 0 ? (
+        <>
+          <h3 style={{ marginTop: 16, fontSize: "1.05rem" }}>Solicitudes pendientes</h3>
+          <p style={{ margin: "4px 0 10px", color: "var(--texto-suave)" }}>
+            Aceptá para que ocupe un asiento. Al rechazar no se descuenta ningún cupo.
+          </p>
+          <ul className="lista-limpia" style={{ display: "grid", gap: 12 }}>
+            {pendientes.map((reserva) => (
+              <li key={reserva.id} style={{ border: "1px solid var(--borde)", borderRadius: 10, padding: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <Avatar src={reserva.passenger.image} nombre={reserva.passenger.name} chico />
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <strong style={{ display: "block" }}>{reserva.passenger.name}</strong>
+                    <span style={{ color: "var(--texto-suave)", fontSize: "0.9rem" }}>
+                      {prettyPhone(reserva.passenger.phone)}
+                    </span>
+                  </div>
+                </div>
+                <div className="fila-botones" style={{ marginTop: 10 }}>
+                  <form action={acceptRequest}>
+                    <input type="hidden" name="reservationId" value={reserva.id} />
+                    <BotonEnviar variante="verde" enviando="Aceptando…">
+                      Aceptar
+                    </BotonEnviar>
+                  </form>
+                  <form action={rejectRequest}>
+                    <input type="hidden" name="reservationId" value={reserva.id} />
+                    <BotonEnviar variante="peligro" enviando="Rechazando…">
+                      Rechazar
+                    </BotonEnviar>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      <h3 style={{ marginTop: 18, fontSize: "1.05rem" }}>Pasajeros anotados</h3>
+      {activos.length === 0 && trip.reservations.filter((r) => r.status !== "CANCELLED" && r.status !== "PENDING").length === 0 && pendientes.length === 0 ? (
         <p style={{ color: "var(--texto-suave)", margin: "6px 0" }}>
-          Todavía nadie reservó. Compartí el viaje con tu gente.
+          Todavía nadie solicitó asiento. Compartí el viaje con tu gente.
         </p>
       ) : null}
 
       <ul className="lista-limpia" style={{ display: "grid", gap: 14 }}>
-        {trip.reservations.map((reserva) => (
-          <li key={reserva.id} style={{ borderTop: "1px dashed var(--borde)", paddingTop: 12 }}>
+        {trip.reservations
+          .filter((r) => r.status !== "PENDING")
+          .map((reserva) => (
+          <li key={reserva.id} style={{ borderTop: "1px solid var(--borde)", paddingTop: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <Avatar src={reserva.passenger.image} nombre={reserva.passenger.name} chico />
               <div style={{ flex: 1, minWidth: 140 }}>

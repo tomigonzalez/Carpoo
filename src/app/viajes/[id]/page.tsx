@@ -36,6 +36,7 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
   const esConductor = user?.id === trip.driver.id;
   const miReserva = user ? trip.reservations.find((r) => r.passengerId === user.id) : undefined;
   const reservaActiva = miReserva?.status === "CONFIRMED";
+  const solicitudPendiente = miReserva?.status === "PENDING";
   const pasajerosConfirmados = trip.reservations.filter((r) => r.status === "CONFIRMED");
   const puedeVerTelefono = Boolean(
     user && (esConductor || reservaActiva || miReserva?.status === "ATTENDED"),
@@ -175,9 +176,18 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
 
       {/* --- Reservar --- */}
       <section aria-live="polite">
-        {reservaActiva ? (
+        {solicitudPendiente ? (
+          <div className="tarjeta">
+            <Alerta tipo="info">Solicitud enviada. Esperando que el conductor la acepte.</Alerta>
+            <div style={{ marginTop: 10 }}>
+              <EnlaceBoton href="/mis-reservas" variante="secundario">
+                Ver mis reservas
+              </EnlaceBoton>
+            </div>
+          </div>
+        ) : reservaActiva ? (
           <div className="tarjeta" style={{ borderColor: "var(--verde)" }}>
-            <Alerta tipo="ok">Ya tenés tu asiento reservado en este viaje.</Alerta>
+            <Alerta tipo="ok">Tu asiento fue confirmado por el conductor.</Alerta>
             {puedeVerTelefono && trip.driver.phone ? (
               <BotonWhatsApp
                 telefono={trip.driver.phone}
