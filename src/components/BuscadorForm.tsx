@@ -18,40 +18,42 @@ export function BuscadorForm({
   accion?: string;
 }) {
   return (
-    <form method="get" action={accion} className="tarjeta" style={{ marginBottom: 18 }}>
+    <form method="get" action={accion} className="tarjeta buscador">
       <h2 className="tarjeta-titulo">¿A dónde vas?</h2>
 
-      <label className="campo">
-        <span className="etiqueta">Desde dónde salís</span>
-        <input
-          className="entrada"
-          type="text"
-          name="origen"
-          list="lista-pueblos"
-          defaultValue={origen}
-          placeholder="Ej: Villarino"
-          autoComplete="off"
-        />
-      </label>
+      <div className="buscador-grid">
+        <label className="campo">
+          <span className="etiqueta">Desde dónde salís</span>
+          <input
+            className="entrada"
+            type="text"
+            name="origen"
+            list="lista-pueblos"
+            defaultValue={origen}
+            placeholder="Ej: Villarino"
+            autoComplete="off"
+          />
+        </label>
 
-      <label className="campo">
-        <span className="etiqueta">A dónde vas</span>
-        <input
-          className="entrada"
-          type="text"
-          name="destino"
-          list="lista-pueblos"
-          defaultValue={destino}
-          placeholder="Ej: Bahía Blanca"
-          autoComplete="off"
-        />
-      </label>
+        <label className="campo">
+          <span className="etiqueta">A dónde vas</span>
+          <input
+            className="entrada"
+            type="text"
+            name="destino"
+            list="lista-pueblos"
+            defaultValue={destino}
+            placeholder="Ej: Bahía Blanca"
+            autoComplete="off"
+          />
+        </label>
 
-      <label className="campo">
-        <span className="etiqueta">¿Qué día viajás?</span>
-        <input className="entrada" type="date" name="fecha" defaultValue={fecha} />
-        <span className="ayuda">Podés dejarlo vacío para ver todos los viajes.</span>
-      </label>
+        <label className="campo">
+          <span className="etiqueta">¿Qué día viajás?</span>
+          <input className="entrada" type="date" name="fecha" defaultValue={fecha} />
+          <span className="ayuda">Podés dejar la fecha vacía para ver todos los viajes.</span>
+        </label>
+      </div>
 
       <datalist id="lista-pueblos">
         {pueblos.map((pueblo) => (
@@ -59,19 +61,17 @@ export function BuscadorForm({
         ))}
       </datalist>
 
-      <label style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <input
-          type="checkbox"
-          name="completos"
-          value="1"
-          defaultChecked={incluirCompletos}
-          style={{ width: 24, height: 24 }}
-        />
-        <span style={{ fontSize: "0.95rem" }}>Mostrar también los viajes completos</span>
+      <label className="buscador-check">
+        <input type="checkbox" name="completos" value="1" defaultChecked={incluirCompletos} />
+        <span>Mostrar también los viajes completos</span>
       </label>
 
-      <button type="submit" className="btn btn-primario" style={{ minHeight: 64, fontSize: "1.15rem" }}>
-        🔍 Buscar viajes
+      <button type="submit" className="btn btn-primario btn-bloque buscador-boton">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m16 16 4.5 4.5" strokeLinecap="round" />
+        </svg>
+        Buscar viajes
       </button>
     </form>
   );

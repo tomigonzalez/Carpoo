@@ -39,11 +39,7 @@ export function Avatar({
 
   if (!src) {
     return (
-      <span
-        className={`avatar ${chico ? "avatar-chico" : ""}`}
-        aria-hidden="true"
-        style={{ display: "grid", placeItems: "center", fontWeight: 800, color: "#4a5560" }}
-      >
+      <span className={`avatar ${chico ? "avatar-chico" : ""}`} aria-hidden="true">
         {iniciales || "?"}
       </span>
     );
@@ -59,11 +55,11 @@ export function Estrellas({ valor, grande = false }: { valor: number; grande?: b
   const redondeado = Math.round(valor);
   return (
     <span
-      style={{ fontSize: grande ? "1.6rem" : "1.05rem", letterSpacing: 2, color: "#d98c00" }}
+      style={{ fontSize: grande ? "1.6rem" : "1.05rem", letterSpacing: 2, color: "var(--estrella)" }}
       aria-label={`${valor.toFixed(1)} de 5 estrellas`}
     >
       {"★".repeat(redondeado)}
-      <span style={{ color: "#c9d2dc" }}>{"★".repeat(5 - redondeado)}</span>
+      <span style={{ color: "var(--borde-fuerte)" }}>{"★".repeat(5 - redondeado)}</span>
     </span>
   );
 }
@@ -121,11 +117,9 @@ export function TituloPagina({
   children?: ReactNode;
 }) {
   return (
-    <header style={{ marginBottom: 18 }}>
-      <h1 style={{ fontSize: "1.6rem", fontWeight: 800 }}>{titulo}</h1>
-      {subtitulo ? (
-        <p style={{ margin: "6px 0 0", color: "var(--texto-suave)" }}>{subtitulo}</p>
-      ) : null}
+    <header className="titulo-pagina">
+      <h1>{titulo}</h1>
+      {subtitulo ? <p>{subtitulo}</p> : null}
       {children}
     </header>
   );
@@ -141,10 +135,16 @@ export function Vacio({
   children?: ReactNode;
 }) {
   return (
-    <div className="tarjeta" style={{ textAlign: "center" }}>
-      <p style={{ fontSize: "1.15rem", fontWeight: 800, margin: 0 }}>{titulo}</p>
-      {texto ? <p style={{ color: "var(--texto-suave)", marginTop: 6 }}>{texto}</p> : null}
-      {children ? <div style={{ marginTop: 14 }}>{children}</div> : null}
+    <div className="tarjeta vacio">
+      <span className="vacio-icono" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="12" cy="9" r="2.5" />
+        </svg>
+      </span>
+      <p className="vacio-titulo">{titulo}</p>
+      {texto ? <p className="vacio-texto">{texto}</p> : null}
+      {children ? <div className="vacio-accion">{children}</div> : null}
     </div>
   );
 }

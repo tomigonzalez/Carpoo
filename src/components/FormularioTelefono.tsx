@@ -22,8 +22,8 @@ export function FormularioTelefono({
 
   if (verificado) {
     return (
-      <div className="tarjeta" style={{ borderColor: "var(--verde)" }}>
-        <h2 className="tarjeta-titulo">Teléfono verificado ✅</h2>
+      <div className="tarjeta tarjeta-verde">
+        <h2 className="tarjeta-titulo">Teléfono verificado</h2>
         <p style={{ margin: 0 }}>
           Ya verificamos tu número <strong>{telefono}</strong>. Los pasajeros pueden escribirte por
           WhatsApp.
@@ -60,7 +60,11 @@ export function FormularioTelefono({
           />
           <span className="ayuda">Con código de área, como lo usás todos los días.</span>
         </label>
-        <BotonEnviar variante={codigoEnviado ? "secundario" : "primario"} enviando="Enviando…">
+        <BotonEnviar
+          variante={codigoEnviado ? "secundario" : "primario"}
+          enviando="Enviando…"
+          className="btn-bloque"
+        >
           {codigoEnviado ? "Enviar el código de nuevo" : "Enviar código"}
         </BotonEnviar>
       </form>
@@ -83,7 +87,7 @@ export function FormularioTelefono({
               required
             />
           </label>
-          <BotonEnviar variante="verde" enviando="Confirmando…">
+          <BotonEnviar variante="verde" enviando="Confirmando…" className="btn-bloque">
             Confirmar mi teléfono
           </BotonEnviar>
         </form>

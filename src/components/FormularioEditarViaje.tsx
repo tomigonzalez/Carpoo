@@ -64,7 +64,7 @@ export function FormularioEditarViaje({
           <textarea className="entrada" name="notes" maxLength={300} defaultValue={notes ?? ""} />
         </label>
 
-        <BotonEnviar variante="secundario" enviando="Guardando…">
+        <BotonEnviar variante="secundario" enviando="Guardando…" className="btn-bloque">
           Guardar cambios
         </BotonEnviar>
       </form>

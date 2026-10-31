@@ -22,7 +22,7 @@ export function ReservarAsiento({
       <div className="tarjeta">
         <Alerta tipo="ok">{estado.ok}</Alerta>
         <p style={{ margin: "8px 0 0", color: "var(--texto-suave)" }}>
-          Cuando el conductor acepte la solicitud te va a aparecer el botón para escribirle por WhatsApp desde este viaje o desde "Mis reservas".
+          Cuando el conductor acepte la solicitud te va a aparecer el botón para escribirle por WhatsApp desde este viaje o desde «Mis reservas».
         </p>
       </div>
     );
@@ -35,7 +35,7 @@ export function ReservarAsiento({
       <p style={{ marginTop: 0, marginBottom: 12, color: "var(--texto-suave)" }}>
         El lugar no se descuenta hasta que el conductor acepte tu solicitud.
       </p>
-      <BotonEnviar variante="primario" enviando="Enviando…">
+      <BotonEnviar variante="primario" enviando="Enviando…" className="btn-bloque">
         Solicitar asiento
       </BotonEnviar>
     </form>

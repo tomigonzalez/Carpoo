@@ -21,7 +21,7 @@ export default async function UsuarioPage({ params }: PageProps<"/usuarios/[id]"
 
   return (
     <>
-      <p style={{ marginTop: 0 }}>
+      <p className="volver">
         <a href="/buscar">← Volver</a>
       </p>
 
@@ -70,7 +70,7 @@ export default async function UsuarioPage({ params }: PageProps<"/usuarios/[id]"
 
         {usuario.carModel || usuario.carColor ? (
           <p style={{ marginBottom: 0 }}>
-            🚗 {[usuario.carColor, usuario.carModel].filter(Boolean).join(" ")}
+            Auto: {[usuario.carColor, usuario.carModel].filter(Boolean).join(" ")}
             {usuario.carPlate ? ` · ${usuario.carPlate}` : ""}
           </p>
         ) : null}

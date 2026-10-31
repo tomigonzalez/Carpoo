@@ -40,7 +40,7 @@ export default async function MisViajesPage({ searchParams }: PageProps<"/mis-vi
 
       <div style={{ marginBottom: 18 }}>
         <EnlaceBoton href="/publicar" variante="verde">
-          🚗 Ofrecer otro viaje
+          Ofrecer otro viaje
         </EnlaceBoton>
       </div>
 

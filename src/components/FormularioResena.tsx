@@ -70,7 +70,7 @@ export function FormularioResena({
         />
       </label>
 
-      <BotonEnviar variante="secundario" enviando="Enviando…">
+      <BotonEnviar variante="secundario" enviando="Enviando…" className="btn-bloque">
         Enviar calificación
       </BotonEnviar>
     </form>
