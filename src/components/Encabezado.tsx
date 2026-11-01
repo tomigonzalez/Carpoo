@@ -10,66 +10,45 @@ export async function Encabezado() {
   return (
     <header className="encabezado">
       <div className="contenedor encabezado-fila">
-        <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
+        <div className="encabezado-izquierda">
           <Link href="/" className="marca-app">
-            <span className="marca-logo" aria-hidden="true">
-              🚗
-            </span>
-            Carpoo
+            {/* eslint-disable-next-line @next/next/no-img-element -- El logo es un SVG público. */}
+            <img
+              src="/avatares/carpoo-icon.svg"
+              alt=""
+              width={40}
+              height={40}
+              className="marca-icono"
+            />
+            <span>Carpoo</span>
           </Link>
-          <nav
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              flexWrap: "wrap",
-              fontWeight: 700,
-            }}
-            aria-label="Navegación principal"
-          >
-            <Link href="/buscar" style={{ color: "var(--texto)", textDecoration: "none" }}>
-              Buscar
-            </Link>
-            <Link href="/publicar" style={{ color: "var(--texto)", textDecoration: "none" }}>
-              Ofrecer viaje
-            </Link>
-            <Link href={user ? "/mis-viajes" : "/ingresar?volver=/mis-viajes"} style={{ color: "var(--texto)", textDecoration: "none" }}>
-              Mis viajes
-            </Link>
-            <Link href={user ? "/perfil" : "/ingresar?volver=/perfil"} style={{ color: "var(--texto)", textDecoration: "none" }}>
-              Perfil
-            </Link>
+          <nav className="nav-principal" aria-label="Navegación principal">
+            <Link href="/buscar">Buscar asiento</Link>
+            <Link href="/publicar">Ofrecer viaje</Link>
+            <Link href={user ? "/mis-viajes" : "/ingresar?volver=/mis-viajes"}>Mis viajes</Link>
+            <Link href={user ? "/perfil" : "/ingresar?volver=/perfil"}>Mi perfil</Link>
           </nav>
         </div>
 
         {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <div className="acciones-usuario">
             {!isProfileComplete(user) ? (
-              <Link
-                href="/perfil"
-                className="etiqueta-estado estado-aviso"
-                style={{ textDecoration: "none" }}
-              >
+              <Link href="/perfil" className="etiqueta-estado estado-aviso etiqueta-perfil">
                 Completá tu perfil
               </Link>
             ) : null}
-            <Link
-              href="/perfil"
-              style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit" }}
-            >
+            <Link href="/perfil" className="enlace-perfil">
               <Avatar src={user.image} nombre={user.name} chico />
-              <span style={{ fontWeight: 700, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {user.name.split(" ")[0]}
-              </span>
+              <span className="nombre-usuario">{user.name.split(" ")[0]}</span>
             </Link>
             <form action={logout}>
-              <button type="submit" className="btn btn-secundario btn-chico" style={{ width: "auto" }}>
+              <button type="submit" className="btn btn-secundario btn-chico boton-salir">
                 Salir
               </button>
             </form>
           </div>
         ) : (
-          <Link href="/ingresar" className="btn btn-primario btn-chico" style={{ width: "auto" }}>
+          <Link href="/ingresar" className="btn btn-primario btn-chico">
             Ingresar
           </Link>
         )}

@@ -46,7 +46,7 @@ export function FormularioViaje({ pueblos, fechaHoy }: { pueblos: string[]; fech
         ))}
       </datalist>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="form-grid-2">
         <label className="campo">
           <span className="etiqueta">Fecha *</span>
           <input className="entrada" type="date" name="date" defaultValue={fechaHoy} required />
@@ -92,8 +92,8 @@ export function FormularioViaje({ pueblos, fechaHoy }: { pueblos: string[]; fech
         />
       </label>
 
-      <BotonEnviar variante="verde" enviando="Publicando…">
-        🚗 Publicar el viaje
+      <BotonEnviar variante="verde" enviando="Publicando…" className="btn-bloque">
+        Publicar el viaje
       </BotonEnviar>
     </form>
   );

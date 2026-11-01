@@ -23,7 +23,7 @@ type TripLike = {
   };
 };
 
-/** Tarjeta de viaje: más compacta y escaneable al estilo web. */
+/** Tarjeta de viaje: clara, escaneable y con la ruta como protagonista. */
 export function TripCard({ trip, stats }: { trip: TripLike; stats?: MiniStats }) {
   const libres = Math.max(trip.seatsTotal - trip.seatsTaken, 0);
   const cancelado = trip.status === "CANCELLED";
@@ -33,28 +33,23 @@ export function TripCard({ trip, stats }: { trip: TripLike; stats?: MiniStats })
   return (
     <Link
       href={`/viajes/${trip.id}`}
-      className="tarjeta"
-      style={{
-        display: "block",
-        textDecoration: "none",
-        color: "inherit",
-        opacity: cancelado ? 0.7 : 1,
-        padding: "14px 16px",
-      }}
+      className="tarjeta viaje-card"
+      style={{ opacity: cancelado ? 0.72 : 1 }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: "0.9rem", color: "var(--texto-suave)" }}>
-            {formatRelativeDay(trip.dateTime)} · {formatTripDate(trip.dateTime).split(", ")[1]}
-          </p>
-          <p style={{ margin: "3px 0 0", fontSize: "1.18rem", fontWeight: 800, letterSpacing: "-0.01em" }}>
-            {trip.origin} → {trip.destination}
-          </p>
-          <p style={{ margin: "1px 0 0", color: "var(--texto-suave)", fontSize: "0.9rem" }}>
-            {formatTripDate(trip.dateTime)}
-          </p>
+      <div className="viaje-cabecera">
+        <div>
+          <p className="viaje-fecha">{formatRelativeDay(trip.dateTime)}</p>
+          <h3 className="viaje-ruta">
+            <span>{trip.origin}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <path d="M4 12h15" strokeLinecap="round" />
+              <path d="m13 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span>{trip.destination}</span>
+          </h3>
+          <p className="viaje-fecha-larga">{formatTripDate(trip.dateTime)}</p>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+        <div className="viaje-lado">
           {cancelado ? (
             <Estado tipo="rojo">Cancelado</Estado>
           ) : completo ? (
@@ -64,46 +59,38 @@ export function TripCard({ trip, stats }: { trip: TripLike; stats?: MiniStats })
               {libres} {libres === 1 ? "lugar libre" : "lugares libres"}
             </Estado>
           )}
-          <span style={{ fontSize: "0.9rem", color: "var(--texto-suave)" }}>
-            Aporte: <strong style={{ color: "var(--texto)" }}>{trip.contribution || "A convenir"}</strong>
+          <span className="viaje-aporte">
+            Aporte: <strong>{trip.contribution || "A convenir"}</strong>
           </span>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          marginTop: 12,
-          paddingTop: 12,
-          borderTop: "1px solid var(--borde)",
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="viaje-pie">
         <Avatar src={trip.driver.image} nombre={trip.driver.name} chico />
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="viaje-conductor">
+          <div className="viaje-conductor-nombre">
             <strong>{trip.driver.name}</strong>
             <Verificado verificado={trip.driver.phoneVerified && Boolean(trip.driver.image)} />
           </div>
-          <p style={{ margin: "1px 0 0", color: "var(--texto-suave)", fontSize: "0.9rem" }}>
-            {auto ? `${auto} · ` : ""}
+          <p className="viaje-conductor-meta">
+            {auto ? <span>Auto: {auto}</span> : null}
             {stats?.rating ? (
-              <>
+              <span>
                 <Estrellas valor={stats.rating} /> {stats.rating.toFixed(1)}
-              </>
+              </span>
             ) : (
-              "Sin calificaciones aún"
+              <span>Sin calificaciones aún</span>
             )}
             {stats?.attendanceRate !== null && stats?.attendanceRate !== undefined ? (
-              <> · Presentismo: {attendanceLabel(stats.attendanceRate)}</>
+              <span>Presentismo: {attendanceLabel(stats.attendanceRate)}</span>
             ) : null}
           </p>
         </div>
-        <span className="btn btn-secundario btn-chico" aria-hidden="true" style={{ pointerEvents: "none" }}>
-          Ver el viaje
-        </span>
+        <div className="viaje-accion">
+          <span className="btn btn-secundario btn-chico" aria-hidden="true">
+            Ver el viaje
+          </span>
+        </div>
       </div>
       <span className="oculto-visual">
         Ver el viaje de {trip.driver.name} desde {trip.origin} a {trip.destination} el{" "}
@@ -112,4 +99,3 @@ export function TripCard({ trip, stats }: { trip: TripLike; stats?: MiniStats })
     </Link>
   );
 }
-

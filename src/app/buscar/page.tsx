@@ -55,12 +55,14 @@ export default async function BuscarPage({ searchParams }: PageProps<"/buscar">)
         </Vacio>
       ) : (
         <>
-          <p style={{ fontWeight: 700, marginBottom: 10 }}>
+          <p className="resultado-conteo">
             {viajes.length} {viajes.length === 1 ? "viaje encontrado" : "viajes encontrados"}
           </p>
-          {viajes.map((viaje) => (
-            <TripCard key={viaje.id} trip={viaje} stats={stats.get(viaje.driver.id)} />
-          ))}
+          <div className="lista-viajes">
+            {viajes.map((viaje) => (
+              <TripCard key={viaje.id} trip={viaje} stats={stats.get(viaje.driver.id)} />
+            ))}
+          </div>
         </>
       )}
     </>

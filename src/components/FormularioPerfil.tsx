@@ -63,7 +63,7 @@ export function FormularioPerfil({
           placeholder="Ej: Fiat Cronos"
         />
       </label>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="form-grid-2">
         <label className="campo">
           <span className="etiqueta">Color</span>
           <input
@@ -86,7 +86,9 @@ export function FormularioPerfil({
         </label>
       </div>
 
-      <BotonEnviar enviando="Guardando…">Guardar mis datos</BotonEnviar>
+      <BotonEnviar enviando="Guardando…" className="btn-bloque">
+        Guardar mis datos
+      </BotonEnviar>
     </form>
   );
 }

@@ -24,6 +24,12 @@ const iconos = {
       <circle cx="16.5" cy="18.5" r="1.5" />
     </svg>
   ),
+  publicar: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8 12h8" strokeLinecap="round" />
+    </svg>
+  ),
   perfil: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <circle cx="12" cy="8" r="4" />
@@ -37,7 +43,8 @@ export function BarraAbajo({ logueado }: { logueado: boolean }) {
 
   const items = [
     { href: "/", etiqueta: "Inicio", icono: iconos.casa },
-    { href: "/buscar", etiqueta: "Buscar asiento", icono: iconos.buscar },
+    { href: "/buscar", etiqueta: "Buscar", icono: iconos.buscar },
+    { href: logueado ? "/publicar" : "/ingresar?volver=/publicar", etiqueta: "Publicar", icono: iconos.publicar },
     { href: logueado ? "/mis-viajes" : "/ingresar?volver=/mis-viajes", etiqueta: "Mis viajes", icono: iconos.viajes },
     { href: logueado ? "/perfil" : "/ingresar?volver=/perfil", etiqueta: "Mi perfil", icono: iconos.perfil },
   ];
@@ -45,7 +52,8 @@ export function BarraAbajo({ logueado }: { logueado: boolean }) {
   return (
     <nav className="barra-abajo" aria-label="Secciones principales">
       {items.map((item) => {
-        const activo = item.href === "/" ? ruta === "/" : ruta.startsWith(item.href.split("?")[0]);
+        const tieneConsulta = item.href.includes("?");
+        const activo = !tieneConsulta && (item.href === "/" ? ruta === "/" : ruta.startsWith(item.href));
         return (
           <Link key={item.etiqueta} href={item.href} data-activo={activo}>
             {item.icono}

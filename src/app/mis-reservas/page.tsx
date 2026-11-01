@@ -111,7 +111,7 @@ export default async function MisReservasPage() {
                     <BotonWhatsApp
                       telefono={trip.driver.phone}
                       mensaje={mensajeReserva({ passengerName: user.name, trip })}
-                      texto={`💬 Escribirle a ${trip.driver.name.split(" ")[0]}`}
+                      texto={`Escribirle a ${trip.driver.name.split(" ")[0]}`}
                     />
                   ) : (
                     <Alerta tipo="info">
@@ -133,7 +133,7 @@ export default async function MisReservasPage() {
                       <form action={confirmMyAttendance}>
                         <input type="hidden" name="reservationId" value={reserva.id} />
                         <BotonEnviar variante="secundario" enviando="Guardando…">
-                          ✅ Sí, viajé
+                          Sí, viajé
                         </BotonEnviar>
                       </form>
                     ) : null}

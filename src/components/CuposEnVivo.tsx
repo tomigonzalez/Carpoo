@@ -40,6 +40,7 @@ export function CuposEnVivo({ tripId, inicial }: { tripId: string; inicial: Cupo
 
   const lleno = cupos.status === "FULL" || cupos.free === 0;
   const cancelado = cupos.status === "CANCELLED";
+  const ocupacion = Math.min(100, Math.round((cupos.seatsTaken / Math.max(cupos.seatsTotal, 1)) * 100));
 
   return (
     <div>
@@ -58,6 +59,9 @@ export function CuposEnVivo({ tripId, inicial }: { tripId: string; inicial: Cupo
         {cupos.seatsTaken} de {cupos.seatsTotal} ocupados
         {actualizado ? " · actualizado en vivo" : ""}
       </p>
+      <div className="cupos-barra" aria-hidden="true">
+        <span style={{ width: `${ocupacion}%` }} />
+      </div>
     </div>
   );
 }

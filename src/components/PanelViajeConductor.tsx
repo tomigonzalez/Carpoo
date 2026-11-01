@@ -146,7 +146,7 @@ export function PanelViajeConductor({
                       passengerName: reserva.passenger.name,
                       trip,
                     })}
-                    texto={`💬 Avisarle a ${reserva.passenger.name.split(" ")[0]}`}
+                    texto={`Avisarle a ${reserva.passenger.name.split(" ")[0]}`}
                   />
                 ) : null}
 
@@ -156,14 +156,14 @@ export function PanelViajeConductor({
                       <input type="hidden" name="reservationId" value={reserva.id} />
                       <input type="hidden" name="status" value="ATTENDED" />
                       <BotonEnviar variante="secundario" enviando="Guardando…">
-                        ✅ Viajó
+                        Viajó
                       </BotonEnviar>
                     </form>
                     <form action={markPassengerStatus}>
                       <input type="hidden" name="reservationId" value={reserva.id} />
                       <input type="hidden" name="status" value="NO_SHOW" />
                       <BotonEnviar variante="peligro" enviando="Guardando…">
-                        🚫 No vino
+                        No vino
                       </BotonEnviar>
                     </form>
                   </div>

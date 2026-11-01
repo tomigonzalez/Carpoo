@@ -1,0 +1,27 @@
+Fuentes autohospedadas de Carpoo
+================================
+
+Los archivos .woff2 de esta carpeta se sirven desde el propio sitio para no
+depender de Google Fonts. Ambas familias son software libre bajo la
+SIL Open Font License 1.1 (OFL-1.1).
+
+1) Bricolage Grotesque  —  bricolage-grotesque-latin.woff2
+   Autores: Mathieu Triay y colaboradores.
+   Copyright: The Bricolage Grotesque Project Authors.
+   Licencia: SIL Open Font License 1.1
+   Repositorio: https://github.com/ateliertriay/bricolage
+
+2) Instrument Sans  —  instrument-sans-latin.woff2
+   Autor: Rodrigo Fuenzalida (Instrument).
+   Copyright: The Instrument Sans Project Authors.
+   Licencia: SIL Open Font License 1.1
+   Repositorio: https://github.com/Instrument/instrument-sans
+
+Texto oficial de la licencia:
+https://openfontlicense.org/open-font-license-official-text/
+
+Resumen de lo que permite la OFL 1.1: usar, estudiar, modificar y redistribuir
+las fuentes libremente, incluso en productos comerciales, siempre que no se
+venda la fuente por sí sola y que se conserve esta atribución. Los archivos de
+esta carpeta son los subsets "latin" publicados por Google Fonts, sin
+modificaciones sobre el diseño original.

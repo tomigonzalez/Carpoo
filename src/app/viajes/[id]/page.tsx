@@ -59,7 +59,7 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
 
   return (
     <>
-      <p style={{ marginTop: 0 }}>
+      <p className="volver">
         <Link href="/buscar">← Volver a la búsqueda</Link>
       </p>
 
@@ -110,7 +110,7 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
               </Link>
               <Verificado verificado={trip.driver.phoneVerified && Boolean(trip.driver.image)} />
             </div>
-            {auto ? <p style={{ margin: "2px 0 0", color: "var(--texto-suave)" }}>🚗 {auto}</p> : null}
+            {auto ? <p style={{ margin: "2px 0 0", color: "var(--texto-suave)" }}>Auto: {auto}</p> : null}
             <p style={{ margin: "6px 0 0" }}>
               {stats?.rating ? (
                 <>
@@ -138,7 +138,7 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
           <div className="dato">
             <span className="dato-clave">Teléfono</span>
             <span className="dato-valor">
-              {puedeVerTelefono && trip.driver.phone ? prettyPhone(trip.driver.phone) : "🔒 Se muestra al reservar"}
+              {puedeVerTelefono && trip.driver.phone ? prettyPhone(trip.driver.phone) : "Se muestra al reservar"}
             </span>
           </div>
         </div>
@@ -186,13 +186,13 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
             </div>
           </div>
         ) : reservaActiva ? (
-          <div className="tarjeta" style={{ borderColor: "var(--verde)" }}>
+          <div className="tarjeta tarjeta-verde">
             <Alerta tipo="ok">Tu asiento fue confirmado por el conductor.</Alerta>
             {puedeVerTelefono && trip.driver.phone ? (
               <BotonWhatsApp
                 telefono={trip.driver.phone}
                 mensaje={mensajeReserva({ passengerName: user?.name ?? "", trip })}
-                texto="💬 Escribirle al conductor por WhatsApp"
+                texto="Escribirle al conductor por WhatsApp"
               />
             ) : null}
             <div style={{ marginTop: 10 }}>
