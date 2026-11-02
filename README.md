@@ -2,7 +2,7 @@
 
 **Viajes compartidos entre pueblos, sin grupos de WhatsApp.**
 
-Carpoo conecta a gente que viaja entre Villarino, Médanos, Bahía Blanca y alrededores. Un
+Carpoo conecta a gente que viaja entre Villarino, Bahía Blanca y alrededores. Un
 conductor publica su viaje (origen, destino, día, hora y asientos) y un pasajero pide un lugar en
 dos toques. El conductor acepta, el cupo se descuenta en vivo y la app los conecta por WhatsApp
 para arreglar el punto de encuentro y el aporte.
