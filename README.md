@@ -259,6 +259,7 @@ Cualquier otro email crea una persona nueva de prueba.
 | Variable | Obligatoria | Para qué |
 | --- | --- | --- |
 | `DATABASE_URL` | Sí | SQLite local (`file:./dev.db`) o Postgres en producción. |
+| `DIRECT_URL` | No | Solo en producción con Supabase: conexión directa (puerto 5432) para `prisma db push`. |
 | `APP_URL` | Sí | URL pública; se usa para armar los callbacks de OAuth. |
 | `AUTH_SECRET` | Sí | Firma la cookie de sesión. Larga y aleatoria. |
 | `DEMO_LOGIN` | No | `"false"` apaga el acceso de prueba. En el demo público queda `"true"`. |
@@ -282,8 +283,23 @@ La app ya viene preparada:
 
 1. **Importá el repo** en [vercel.com/new](https://vercel.com/new) (framework: Next.js, sin tocar
    nada).
-2. **Creá la base**: en el proyecto → *Storage* → *Create Database* → **Postgres (Neon)**, plan
-   gratis. Vercel inyecta `DATABASE_URL` sola.
+2. **Creá la base** (cualquiera de las dos opciones sirve):
+
+   - **Neon desde Vercel** (la más simple): en el proyecto → *Storage* → *Create Database* →
+     **Postgres (Neon)**, plan gratis. Vercel inyecta `DATABASE_URL` sola y no hay que configurar
+     nada más.
+   - **Supabase**: creá un proyecto en [supabase.com](https://supabase.com) y copiá dos cadenas
+     desde *Project Settings → Database → Connection string*:
+     - **Transaction pooler** (puerto `6543`), agregando `?pgbouncer=true&connection_limit=1` →
+       va en `DATABASE_URL`. Es la que usa la app en cada request.
+     - **Direct connection** o **Session pooler** (puerto `5432`) → va en `DIRECT_URL`. La usa
+       `prisma db push` para crear las tablas durante el build.
+
+     ```env
+     DATABASE_URL="postgresql://postgres.<ref>:<clave>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+     DIRECT_URL="postgresql://postgres.<ref>:<clave>@aws-0-<region>.pooler.supabase.com:5432/postgres"
+     ```
+
 3. **Variables de entorno** del proyecto:
 
    ```env
@@ -292,16 +308,18 @@ La app ya viene preparada:
    DEMO_LOGIN="true"        # para el demo público; "false" en un producto real
    ```
 
-4. **Deploy**. El script `vercel-build` se encarga del resto: genera el schema Postgres, crea las
-   tablas (`prisma db push`), compila y publica.
-5. **Datos de ejemplo (opcional)**, una sola vez desde tu máquina, apuntando a la base de Neon:
+   > Generá `AUTH_SECRET` con:
+   > `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
+
+4. **Deploy**. El script `vercel-build` se encarga del resto: genera el schema Postgres (agregando
+   `directUrl` si existe `DIRECT_URL`), crea las tablas (`prisma db push`), compila y publica.
+5. **Datos de ejemplo (opcional)**, una sola vez desde tu máquina, apuntando a la base de
+   producción:
 
    ```bash
-   $env:DATABASE_URL="postgresql://..."      # cadena de conexión de Neon
-   npx prisma generate --schema prisma/schema.postgres.prisma
-   npx prisma db push --schema prisma/schema.postgres.prisma
-   node prisma/seed.mts
-   npx prisma generate                        # vuelve al cliente de SQLite local
+   $env:DATABASE_URL="postgresql://..."      # cadena de producción (pooler)
+   $env:DIRECT_URL="postgresql://..."        # solo con Supabase (puerto 5432)
+   npm run db:seed:prod                      # crea las tablas y carga el seed
    ```
 
 6. Si querés que funcione el login con Google/Facebook en producción, agregá los callbacks del
