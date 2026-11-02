@@ -38,6 +38,9 @@ yarn-error.log*
 /prisma/*.db
 /prisma/*.db-journal
 
+# schema de Postgres generado para el deploy
+/prisma/schema.postgres.prisma
+
 # vercel
 .vercel
 

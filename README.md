@@ -1,45 +1,100 @@
-# Carpoo 🚗
+# Carpoo
 
-**Viajes compartidos entre pueblos, sin grupos de WhatsApp .**
+**Viajes compartidos entre pueblos, sin grupos de WhatsApp.**
 
-Carpoo conecta a personas que viajan entre pueblos y ciudades cercanas). Un conductor publica su viaje (origen, destino, día, hora y
-asientos libres) y un pasajero reserva su asiento en un par de toques. El cupo se descuenta
-**en tiempo real** y, al confirmar, la app conecta a ambas partes con un **botón directo de
-WhatsApp** para arreglar el pago y el punto de encuentro.
+Carpoo conecta a gente que viaja entre Villarino, Médanos, Bahía Blanca y alrededores. Un
+conductor publica su viaje (origen, destino, día, hora y asientos) y un pasajero pide un lugar en
+dos toques. El conductor acepta, el cupo se descuenta en vivo y la app los conecta por WhatsApp
+para arreglar el punto de encuentro y el aporte.
 
-No hay perfiles anónimos: cada viaje y cada reserva cuelga de una cuenta real con **teléfono
-verificado** y **foto**. Antes de reservar se ve la **reputación** (estrellas), el **presentismo**
-(si la persona suele aparecer o no) y el historial de viajes. En este MVP **no se cobra nada
-dentro de la app**: Carpoo solo conecta a las personas.
+No hay perfiles anónimos: cada viaje cuelga de una cuenta real con **foto** y **teléfono
+verificado**. Antes de subir a un auto se ve la **reputación** y el **presentismo** de la otra
+persona. **No se cobra nada dentro de la app**: Carpoo solo conecta a las personas.
+
+> ### Proyecto en construcción
+> Esto es un MVP funcional, no un producto terminado. Hay cosas que faltan y cosas que van a
+> cambiar (mirá el [roadmap](#roadmap)). Está publicado como pieza de portafolio.
+>
+> ### Hecho a mano con IA
+> Carpoo se construyó **en colaboración con IA, en sesiones de trabajo largas y con ida y vuelta
+> constante**: yo tomaba las decisiones de producto, de diseño y de negocio; la IA escribía código,
+> proponía alternativas y ejecutaba. Fue también una **prueba de hasta dónde llega hoy un agente de
+> código** en un proyecto real: autenticación OAuth propia, transacciones para no sobrevender,
+> diseño completo y despliegue. Todo el código, los textos y este README se escribieron así.
 
 ---
 
-## ¿Qué incluye esta versión (MVP)?
+## Capturas
 
-**Para el conductor**
-- Publicar un viaje con un formulario simple: origen, destino, fecha, hora y asientos (1 a 8).
-- Panel "Mis viajes" con los viajes publicados, los asientos que quedan **en vivo** y quién reservó.
-- Marcar el viaje como **Completo**, **Cancelado** (libera los asientos) o **Realizado**.
-- Al finalizar, marcar a cada pasajero como **Viajó** o **No vino** (alimenta el presentismo).
+| Inicio (escritorio) | Detalle del viaje |
+| --- | --- |
+| ![Inicio](docs/capturas/home-desktop.png) | ![Detalle del viaje](docs/capturas/viaje-desktop.png) |
 
-**Para el pasajero**
-- Buscador directo *"¿A dónde vas?"* con filtros por origen, destino y fecha.
-- Tarjetas de viaje claras: foto del conductor, auto, hora, asientos libres, reputación y presentismo.
-- Botón **"Reservar asiento"**: descuenta 1 asiento al instante y evita la sobreventa.
-- "Mis reservas", con opción de cancelar y de confirmar *"Sí, viajé"*.
-- Al confirmar la reserva, se habilita el **botón de WhatsApp** del conductor.
+| Buscador | Inicio (celular) | Ingreso |
+| --- | --- | --- |
+| ![Buscador](docs/capturas/buscar-desktop.png) | ![Inicio móvil](docs/capturas/home-mobile.png) | ![Ingreso](docs/capturas/ingresar-mobile.png) |
 
-**Identidad y confianza**
-- Inicio de sesión en 1 clic con **Google** o **Facebook** (pensado para personas adultas/mayores).
-- Verificación del teléfono con un **código de 6 números** (en modo prueba se muestra en pantalla).
-- Foto de perfil y nombre. Sin perfil completo (foto + teléfono verificado) **no se puede publicar ni reservar**.
-- Reputación de 1 a 5 estrellas con comentario corto, después de cada viaje.
-- Presentismo = viajes asistidos ÷ (asistidos + ausencias), visible en el perfil.
+---
+
+## El problema
+
+Entre pueblos no hay transporte público frecuente y coordinarlo termina siempre igual: un grupo de
+WhatsApp enorme, mensajes que se pierden, gente que escribe "¿alguien va mañana?" y nadie sabe si
+queda lugar. Carpoo resuelve tres cosas concretas:
+
+1. **Ver los viajes disponibles** en un lugar, con fecha, hora y asientos reales.
+2. **No sobrevender**: el cupo se descuenta con transacciones, no "a ojo".
+3. **Saber con quién viajás**: foto, teléfono verificado, estrellas y presentismo.
+
+---
+
+## Cómo funciona
+
+**Conductor**
+1. Inicia sesión con Google o Facebook y verifica su teléfono.
+2. Publica el viaje: origen, destino, fecha, hora, asientos (1 a 8), aporte y notas.
+3. Recibe las **solicitudes de asiento** en *Mis viajes* y las **acepta o rechaza**.
+4. Al aceptarlas, el asiento se descuenta y se habilita el WhatsApp con cada pasajero.
+5. Al terminar, marca a cada pasajero como **Viajó** o **No vino** (alimenta el presentismo).
+
+**Pasajero**
+1. Busca por origen, destino y fecha.
+2. Pide un asiento. La solicitud queda **pendiente** y **no descuenta cupo** todavía.
+3. Cuando el conductor acepta, el lugar queda confirmado y aparece el **botón de WhatsApp**.
+4. Puede cancelar cuando quiera: el asiento vuelve a quedar libre.
+5. Después del viaje, califica con 1 a 5 estrellas.
+
+**Reglas de confianza**
+- Sin **foto + teléfono verificado** no se puede publicar ni pedir un asiento.
+- El teléfono del conductor **no se muestra** hasta que hay una reserva confirmada o asistida.
+- Presentismo = viajes asistidos ÷ (asistidos + ausencias), visible en el perfil público.
+
+---
+
+## Funcionalidades
+
+**Conductor**
+- Publicar un viaje con formulario simple y validación en el servidor.
+- Panel *Mis viajes* con solicitudes pendientes, pasajeros anotados y ocupación en vivo.
+- Editar, cancelar (libera los cupos) y finalizar el viaje.
+- Botón de WhatsApp con el mensaje ya redactado para cada pasajero.
+
+**Pasajero**
+- Buscador *"¿A dónde vas?"* con filtros por origen, destino y fecha.
+- Tarjetas con foto del conductor, auto, hora, asientos libres, reputación y presentismo.
+- *Mis reservas*: cancelar, confirmar *"Sí, viajé"* y escribir por WhatsApp.
+
+**Cuenta y confianza**
+- Login en un clic con **Google** o **Facebook** (OAuth propio, sin librerías de auth).
+- **Acceso de prueba** por email para demos, sin contraseña.
+- Verificación del teléfono con **código de 6 dígitos** (en modo demo se muestra en pantalla;
+  con Twilio configurado, llega por SMS).
+- Reputación de 1 a 5 estrellas con comentario y perfil público.
 
 **Experiencia**
-- Mobile-first, botones grandes, texto claro y alto contraste. En español cotidiano
-  ("Ofrecer viaje", "Buscar asiento", "Mis reservas") y entendible sin tutorial.
-- El teléfono del conductor **no se muestra** hasta que hay una reserva confirmada o asistida.
+- Mobile-first, botones grandes, alto contraste y textos en español rioplatense.
+- Barra inferior flotante en el celular, navegación clásica en escritorio.
+- La mayoría de la UI son **componentes de servidor**: poco JavaScript en el cliente.
 
 ---
 
@@ -47,59 +102,110 @@ dentro de la app**: Carpoo solo conecta a las personas.
 
 | Pieza | Elección | Por qué |
 | --- | --- | --- |
-| Framework | **Next.js 16.4.2** (App Router, Server Actions) | Un solo proyecto para pantallas y lógica; acciones de formulario sin API extra. |
+| Framework | **Next.js 16.4** (App Router, Server Actions) | Un solo proyecto para pantallas y lógica; los formularios no necesitan una API aparte. |
 | UI | **React 19.3** + **TypeScript** | Tipado de punta a punta y componentes modernos. |
-| Estilos | **Tailwind CSS v4** + tokens propios en `globals.css` | Diseño consistente y botones grandes. |
-| Base de datos | **Prisma 6.19.3** + **SQLite** | SQLite es un solo archivo: no hay que instalar nada para probar. |
-| Sesión | **jose** (JWT HS256 en cookie `httpOnly`) | Login liviano y sin dependencias pesadas. |
-| OAuth | Implementación propia en `src/lib/oauth.ts` | Flujo authorization-code de Google y Facebook, sin librerías extra. |
+| Estilos | **Tailwind CSS v4** + tokens propios en `globals.css` | Diseño consistente con variables CSS y clases reutilizables. |
+| Base de datos | **Prisma 6** + **SQLite** en local / **Postgres** en producción | SQLite es un archivo: cero instalación para probar. En Vercel, Postgres. |
+| Sesión | **jose** (JWT HS256 en cookie `httpOnly`) | Liviano, sin dependencias pesadas. |
+| OAuth | Implementación propia en `src/lib/oauth.ts` | Flujo *authorization code* de Google y Facebook, sin librerías extra. |
+| SMS | **Twilio** (opcional) | Verificación real del teléfono; sin claves, el código se muestra en pantalla. |
+| Tipografías | **Bricolage Grotesque** + **Instrument Sans** (autohospedadas, OFL) | Sin depender de Google Fonts en tiempo de ejecución. |
 
-> **Nota sobre el render:** las páginas leen datos en vivo (viajes, cupos, reservas), por eso en
-> `next.config.ts` está `cacheComponents: false` y se usa el render dinámico clásico.
-
----
-
-## Requisitos
-
-- **Node.js 20.9 o superior** (recomendado 22 LTS).
-- **npm** (viene con Node).
-- Windows, macOS o Linux. No hace falta instalar ninguna base de datos.
-- *(Opcional)* Claves de Google y/o Facebook para el login real.
-- *(Opcional)* Cuenta de Twilio para enviar SMS reales.
+> Las páginas leen datos vivos (viajes, cupos, reservas), por eso `cacheComponents: false` y render
+> dinámico clásico. No hay caché que pueda mostrar un cupo viejo.
 
 ---
 
-## Puesta en marcha local (paso a paso)
+## Arquitectura
 
-### 1. Instalar dependencias
+```
+Carpoo/
+├─ prisma/
+│  ├─ schema.prisma          # Modelo de datos (User, Trip, Reservation, Review)
+│  ├─ seed.mts               # Datos de ejemplo (npm run db:seed)
+│  └─ dev.db                 # SQLite local (generado, no se commitea)
+├─ public/
+│  ├─ avatares/              # Logo y fotos de ejemplo en SVG
+│  └─ fuentes/               # Tipografías .woff2 + su licencia
+├─ scripts/
+│  └─ preparar-postgres.mjs  # Genera el schema Postgres solo para el deploy
+├─ src/
+│  ├─ app/                   # Rutas (App Router)
+│  │  ├─ page.tsx            # Inicio: hero + últimos viajes
+│  │  ├─ buscar/             # Buscador de asientos
+│  │  ├─ viajes/[id]/        # Detalle: cupos en vivo, reservar, reseñas
+│  │  ├─ publicar/           # Publicar un viaje
+│  │  ├─ mis-viajes/         # Panel del conductor
+│  │  ├─ mis-reservas/       # Reservas del pasajero
+│  │  ├─ perfil/             # Foto, teléfono, auto y reputación
+│  │  ├─ usuarios/[id]/      # Perfil público
+│  │  ├─ ingresar/           # Login Google/Facebook + acceso de prueba
+│  │  └─ api/                # OAuth (signin/callback) y cupos en vivo (JSON)
+│  ├─ components/            # Header, barra inferior, tarjetas y formularios
+│  └─ lib/
+│     ├─ actions/            # Server Actions: auth, trips, reservations
+│     ├─ session.ts          # Cookie de sesión + regla de perfil completo
+│     ├─ oauth.ts            # Google y Facebook (authorization code)
+│     ├─ queries.ts          # Consultas de lectura
+│     ├─ stats.ts            # Reputación, presentismo e historial
+│     ├─ validate.ts         # Teléfonos, links de WhatsApp, limpieza de texto
+│     ├─ messages.ts         # Textos prearmados de WhatsApp
+│     └─ notify.ts           # Códigos de verificación (consola / Twilio)
+└─ next.config.ts
+```
+
+### Modelo de datos
+
+| Modelo | Para qué |
+| --- | --- |
+| `User` | Cuenta real: nombre, foto, proveedor OAuth, teléfono verificado, datos del auto, `isAdmin`. |
+| `Trip` | Viaje publicado: origen, destino, fecha/hora, `seatsTotal`/`seatsTaken`, estado y aporte. |
+| `Reservation` | Solicitud o reserva: `PENDING → CONFIRMED → ATTENDED / NO_SHOW`, única por persona y viaje. |
+| `Review` | 1 a 5 estrellas + comentario, única por autor/viaje/destinatario. |
+
+### Decisiones técnicas que vale la pena mirar
+
+- **Reserva sin sobreventa**: la aceptación corre en `prisma.$transaction` con un `updateMany`
+  condicionado a `seatsTaken < seatsTotal`. Si dos personas aceptan a la vez el último asiento, una
+  falla y la otra entra. El viaje pasa a `FULL` solo.
+- **Sin librería de autenticación**: OAuth a mano (3 pasos: redirigir, recibir el `code`,
+  cambiarlo por el perfil) y sesión JWT firmada. Menos dependencias, más control.
+- **Validación siempre en el servidor**: cada Server Action verifica sesión, propiedad del recurso y
+  limpia los datos (`cleanText`, `cleanInt`, `normalizePhone`). El cliente no es confiable.
+- **Privacidad del teléfono**: se oculta en las consultas hasta que exista reserva confirmada.
+- **Cupos en vivo**: un endpoint liviano devuelve los asientos cada 7 segundos, sin recargar la
+  página.
+- **SQLite en local, Postgres en Vercel**: `scripts/preparar-postgres.mjs` genera una copia del
+  schema con `provider = "postgresql"` solo durante el build. El desarrollo local sigue siendo un
+  archivo y no necesita instalar una base.
+
+---
+
+## Correr el proyecto en local
+
+Requisitos: **Node 20.9+** (probado con 22 y 24) y npm. No hace falta instalar ninguna base de datos.
 
 ```bash
+# 1. Dependencias (corre prisma generate solo)
 npm install
-```
 
-Esto también ejecuta `prisma generate` automáticamente (`postinstall`).
+# 2. Variables de entorno
+cp .env.example .env        # Windows: Copy-Item .env.example .env
 
-### 2. Crear el archivo de variables de entorno
-
-Copiá el ejemplo y editalo:
-
-```bash
-# Linux / macOS
-cp .env.example .env
-```
-
-```powershell
-# Windows (PowerShell)
-Copy-Item .env.example .env
-```
-
-Generá una clave secreta para la cookie de sesión y pegala en `AUTH_SECRET`:
-
-```bash
+# 3. Generar la clave de sesión y pegarla en AUTH_SECRET
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+
+# 4. Base de datos + datos de ejemplo
+npm run db:push
+npm run db:seed
+
+# 5. Levantar
+npm run dev
 ```
 
-El `.env` mínimo para probar en local:
+Abrí **http://localhost:3000**.
+
+`.env` mínimo para probar:
 
 ```env
 DATABASE_URL="file:./dev.db"
@@ -108,235 +214,168 @@ AUTH_SECRET="<la clave larga que generaste>"
 DEMO_LOGIN="true"
 ```
 
-### 3. Crear la base de datos y cargar los datos de ejemplo
+> **Zona horaria:** las fechas se formatean en el servidor. Para ver las horas de Argentina,
+> arrancá con `TZ=America/Argentina/Buenos_Aires` (Linux/macOS) o configurá la zona en Windows.
 
-```bash
-npm run db:push     # crea el archivo prisma/dev.db con las tablas
-npm run db:seed     # carga 5 personas, viajes y reseñas de ejemplo
-```
+### Entrar a probar
 
-### 4. Levantar la app
+En **/ingresar** hay dos caminos:
 
-```bash
-npm run dev
-```
+- **Acceso de prueba**: escribís un email y entrás sin contraseña (ideal para ver la app rápido).
+- **Google / Facebook**: solo si cargaste las claves (ver abajo).
 
-Abrí **http://localhost:3000** en el navegador.
-
-> **Zona horaria:** las horas se muestran en la zona horaria del servidor. Para ver las horas
-> exactas de Argentina, arrancá con `TZ=America/Argentina/Buenos_Aires` (Linux/macOS) o configurá
-> la zona horaria del sistema en Windows.
-
-### 5. Entrar a probar
-
-En **http://localhost:3000/ingresar** tenés dos caminos:
-
-- **Acceso de prueba** (sin Google ni Facebook): escribí uno de los emails de ejemplo y entrás.
-- **Google / Facebook**: solo si cargaste las claves (ver más abajo).
-
-**Emails de ejemplo** (creados por el seed, sin contraseña):
+Emails del seed:
 
 | Email | Persona | Para qué sirve |
 | --- | --- | --- |
-| `maria@ejemplo.com` | María Fernández (con auto) | Tiene viajes publicados, reputación 5.0 y presentismo. |
-| `jorge@ejemplo.com` | Jorge Almada (con auto) | Tiene un viaje completo y otro con asientos libres. |
+| `maria@ejemplo.com` | María Fernández | Conductora con viajes, reputación 5.0 y presentismo. |
+| `jorge@ejemplo.com` | Jorge Almada | Un viaje completo y otro con lugares libres. |
 | `lucia@ejemplo.com` | Lucía Rossi | Pasajera con reservas e historial. |
 | `diego@ejemplo.com` | Diego Sosa | Tiene una ausencia registrada (presentismo bajo). |
-| `ana@ejemplo.com` | Ana Gutiérrez | **Teléfono sin verificar**: sirve para ver el flujo "Completá tu perfil". |
+| `ana@ejemplo.com` | Ana Gutiérrez | **Teléfono sin verificar**: muestra el flujo "Completá tu perfil". |
 
-> Escribir cualquier otro email **crea** una persona nueva de prueba.
-
----
-
-## Guía de prueba (recorrido recomendado)
-
-**A. Publicar un viaje (conductor)**
-1. Entrá con `maria@ejemplo.com`.
-2. Tocá **"Ofrecer viaje"** → cargá origen, destino, fecha, hora y asientos → Publicar.
-3. Vas a **"Mis viajes"** y ves el viaje con los asientos libres en vivo.
-
-**B. Buscar y reservar (pasajero)**
-1. En una ventana de incógnito, entrá con `lucia@ejemplo.com`.
-2. **"Buscar asiento"** → filtrá por origen/destino/fecha.
-3. Abrí un viaje y tocá **"Reservar asiento"**. El cupo baja 1 al instante y aparece el
-   **botón de WhatsApp** del conductor.
-
-**C. Sin sobreventa**
-1. Con el viaje lleno, intentá reservar desde otra cuenta: la app avisa
-   *"Se acaba de llenar. Probá con otro viaje."* y el viaje queda **Completo**.
-
-**D. Cancelar y liberar el asiento**
-1. Como pasajero, cancelá la reserva en **"Mis reservas"**: el asiento vuelve a quedar libre.
-2. Como conductor, cancelá el viaje: se cancelan las reservas y se liberan los cupos.
-
-**E. Perfil incompleto**
-1. Entrá con `ana@ejemplo.com` (sin teléfono).
-2. Intentá publicar o reservar: la app pide **foto + teléfono verificado**.
-3. En **"Mi perfil"**, verificá el teléfono: en modo prueba el **código aparece en pantalla**
-   (y en la consola del servidor). Cargalo y listo.
-
-**F. Reputación y presentismo**
-1. Mirá el perfil de `maria@ejemplo.com` (calificaciones y presentismo).
-2. En un viaje **ya realizado**, calificá de 1 a 5 estrellas con un comentario.
-3. El promedio y el historial se recalculan al instante.
+Cualquier otro email crea una persona nueva de prueba.
 
 ---
 
-## Inicio de sesión con Google y Facebook
+## Guía de prueba (recorrido de 3 minutos)
 
-Sin claves, los botones aparecen **deshabilitados** (la app nunca se rompe). Para activarlos:
+1. **Publicar**: entrá con `maria@ejemplo.com` → *Ofrecer viaje* → completá y publicá.
+2. **Pedir asiento**: en una ventana incógnito, entrá con `lucia@ejemplo.com` → *Buscar asiento* →
+   abrí el viaje → *Pedir asiento*. El cupo **todavía no baja**: queda pendiente.
+3. **Aceptar**: volvé a la ventana de María → *Mis viajes* → **Aceptar**. Ahí sí baja 1 asiento y se
+   habilita el WhatsApp.
+4. **Sin sobreventa**: con el viaje lleno, intentá pedir desde otra cuenta. La app avisa que se
+   llenó y el viaje queda `FULL`.
+5. **Cancelar**: como pasajero en *Mis reservas*; el asiento vuelve a quedar libre.
+6. **Perfil incompleto**: entrá con `ana@ejemplo.com` e intentá publicar: pide foto y teléfono. El
+   código de verificación aparece **en pantalla** en modo demo.
+7. **Reputación**: en un viaje ya realizado, calificá de 1 a 5 estrellas.
 
-**Google** — en [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
-1. Creá un **ID de cliente OAuth 2.0** de tipo *Aplicación web*.
-2. En **URIs de redireccionamiento autorizados**, agregá:
-   - `http://localhost:3000/api/auth/callback/google`
-   - `https://TU-DOMINIO/api/auth/callback/google` (cuando publiques)
-3. Copiá el *Client ID* y *Client Secret* a `.env`:
+---
+
+## Variables de entorno
+
+| Variable | Obligatoria | Para qué |
+| --- | --- | --- |
+| `DATABASE_URL` | Sí | SQLite local (`file:./dev.db`) o Postgres en producción. |
+| `APP_URL` | Sí | URL pública; se usa para armar los callbacks de OAuth. |
+| `AUTH_SECRET` | Sí | Firma la cookie de sesión. Larga y aleatoria. |
+| `DEMO_LOGIN` | No | `"false"` apaga el acceso de prueba. En el demo público queda `"true"`. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Login con Google. Sin claves, el botón aparece deshabilitado. |
+| `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | No | Login con Facebook. |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` | No | Envío real de SMS. Sin esto, el código va a la consola y a la pantalla. |
+
+### Callbacks de OAuth
+
+- Google: `https://TU-DOMINIO/api/auth/callback/google`
+- Facebook: `https://TU-DOMINIO/api/auth/callback/facebook`
+
+Se cargan en la consola de cada proveedor y tienen que coincidir con `APP_URL`.
+
+---
+
+## Despliegue en Vercel
+
+Vercel no puede usar SQLite (el sistema de archivos es efímero), así que el deploy usa **Postgres**.
+La app ya viene preparada:
+
+1. **Importá el repo** en [vercel.com/new](https://vercel.com/new) (framework: Next.js, sin tocar
+   nada).
+2. **Creá la base**: en el proyecto → *Storage* → *Create Database* → **Postgres (Neon)**, plan
+   gratis. Vercel inyecta `DATABASE_URL` sola.
+3. **Variables de entorno** del proyecto:
+
    ```env
-   GOOGLE_CLIENT_ID="..."
-   GOOGLE_CLIENT_SECRET="..."
-   ```
-
-**Facebook** — en [Meta for Developers](https://developers.facebook.com/) → tu app → *Facebook Login → Configuración*:
-1. En **URI de redireccionamiento de OAuth válidos**, agregá:
-   - `http://localhost:3000/api/auth/callback/facebook`
-   - `https://TU-DOMINIO/api/auth/callback/facebook`
-2. Copiá el *App ID* y *App Secret* a `.env`:
-   ```env
-   FACEBOOK_CLIENT_ID="..."
-   FACEBOOK_CLIENT_SECRET="..."
-   ```
-
-> Los callbacks se arman con `APP_URL` (si está cargada) o con la URL de la request.
-> Si usás otro dominio, cambiá `APP_URL` para que coincida con la URL registrada.
-
----
-
-## Verificación por SMS / WhatsApp
-
-En modo prueba el código de 6 dígitos se muestra en pantalla y queda en la consola del servidor
-(`[Carpoo] Código de verificación para +54...: 123456`). No hace falta configurar nada.
-
-Para enviar SMS reales, cargá estas variables y el envío por Twilio se activa solo
-(ver `src/lib/notify.ts`):
-
-```env
-TWILIO_ACCOUNT_SID="..."
-TWILIO_AUTH_TOKEN="..."
-TWILIO_FROM="+1XXXXXXXXXX"
-```
-
-Para WhatsApp Business, reemplazá en `sendVerificationCode` el `fetch` de Twilio por la llamada
-a la API de WhatsApp (misma función, mismo contrato).
-
----
-
-## Despliegue
-
-**Recomendado para producción: un VPS con Node + Postgres.**
-
-SQLite es ideal para probar, pero en plataformas serverless (como Vercel) el sistema de archivos
-es efímero y la base se pierde en cada despliegue. Pasos:
-
-1. En `prisma/schema.prisma`, cambiá `provider = "sqlite"` por `provider = "postgresql"`.
-2. Definí `DATABASE_URL` apuntando a tu Postgres (por ejemplo [Neon](https://neon.tech) o uno propio).
-3. En el servidor:
-   ```bash
-   npm install
-   npx prisma migrate deploy    # o: npx prisma db push
-   npm run build
-   npm run start
-   ```
-4. Variables de entorno en producción:
-   ```env
-   DATABASE_URL="postgresql://..."
-   APP_URL="https://tu-dominio.com"
+   APP_URL="https://tu-proyecto.vercel.app"
    AUTH_SECRET="<clave larga y aleatoria>"
-   DEMO_LOGIN="false"
-   GOOGLE_CLIENT_ID="..."        # y/o Facebook
-   FACEBOOK_CLIENT_ID="..."
+   DEMO_LOGIN="true"        # para el demo público; "false" en un producto real
    ```
-5. Acordate de **agregar los callbacks** de producción en Google y Facebook con tu dominio real.
 
-> **Importante:** en producción poné `DEMO_LOGIN="false"` para apagar el acceso de prueba.
+4. **Deploy**. El script `vercel-build` se encarga del resto: genera el schema Postgres, crea las
+   tablas (`prisma db push`), compila y publica.
+5. **Datos de ejemplo (opcional)**, una sola vez desde tu máquina, apuntando a la base de Neon:
 
-### Scripts útiles
+   ```bash
+   $env:DATABASE_URL="postgresql://..."      # cadena de conexión de Neon
+   npx prisma generate --schema prisma/schema.postgres.prisma
+   npx prisma db push --schema prisma/schema.postgres.prisma
+   node prisma/seed.mts
+   npx prisma generate                        # vuelve al cliente de SQLite local
+   ```
+
+6. Si querés que funcione el login con Google/Facebook en producción, agregá los callbacks del
+   dominio de Vercel en cada consola. Si no, el **acceso de prueba** sigue funcionando.
+
+> En producción `DEMO_LOGIN="true"` permite que cualquiera entre con un email. Para el demo de
+> portafolio es a propósito; en un producto real va en `"false"`.
+
+---
+
+## Scripts
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm run dev` | Levanta la app en modo desarrollo. |
-| `npm run build` | Compila para producción. |
-| `npm run start` | Arranca el build de producción. |
-| `npm run lint` | Revisa el código con ESLint. |
-| `npm run db:push` | Crea/actualiza las tablas según el schema. |
-| `npm run db:seed` | Carga los datos de ejemplo. |
-| `npm run db:studio` | Abre Prisma Studio para ver/editar la base. |
-| `npm run db:reset` | Borra todo y vuelve a cargar los datos de ejemplo. |
+| `npm run dev` | Desarrollo (Turbopack) en http://localhost:3000 |
+| `npm run build` | Build de producción + chequeo de tipos |
+| `npm run start` | Sirve el build |
+| `npm run lint` | ESLint |
+| `npm run db:push` | Crea/actualiza las tablas del SQLite local |
+| `npm run db:seed` | Carga los datos de ejemplo |
+| `npm run db:studio` | Prisma Studio |
+| `npm run db:reset` | Borra todo y vuelve a seedear |
 
 ---
 
-## Notas de seguridad
+## Seguridad
 
-- La sesión es un **JWT firmado (HS256)** en una cookie **httpOnly** `SameSite=Lax` (y `Secure` en
-  producción). No se puede falsificar sin el `AUTH_SECRET`.
-- `AUTH_SECRET` debe ser **largo y aleatorio**. Sin él (o si es muy corto) la app no arranca las sesiones.
-- Todas las acciones de servidor **verifican la sesión y la propiedad** del recurso (por ejemplo,
-  solo el conductor puede cancelar su propio viaje).
-- Reservar y cancelar usan **transacciones** y una condición de cupo, para que dos personas no
-  tomen el último asiento a la vez.
-- El teléfono del conductor se oculta hasta que exista una reserva confirmada o asistida.
-- No hay pagos ni comisiones dentro de la app: el dinero se arregla entre las partes.
-
----
-
-## Estructura del proyecto
-
-```
-Carpoo/
-├─ prisma/
-│  ├─ schema.prisma        # Modelo de datos (User, Trip, Reservation, Review)
-│  ├─ seed.mts             # Datos de ejemplo (npm run db:seed)
-│  └─ dev.db               # Base SQLite local (generada)
-├─ public/avatares/        # Fotos de ejemplo (SVG, funcionan sin internet)
-├─ src/
-│  ├─ app/
-│  │  ├─ page.tsx                 # Inicio: buscadores grandes + últimos viajes
-│  │  ├─ buscar/                  # Buscador de asientos
-│  │  ├─ viajes/[id]/             # Detalle del viaje: cupos en vivo + reservar + reseñas
-│  │  ├─ publicar/                # Formulario para ofrecer un viaje
-│  │  ├─ mis-viajes/              # Panel del conductor
-│  │  ├─ mis-reservas/            # Reservas del pasajero
-│  │  ├─ perfil/                  # Foto, teléfono, auto y reputación
-│  │  ├─ usuarios/[id]/           # Perfil público de una persona
-│  │  ├─ ingresar/                # Login con Google/Facebook + acceso de prueba
-│  │  └─ api/
-│  │     ├─ auth/signin/[provider]/    # Redirige a Google/Facebook
-│  │     ├─ auth/callback/[provider]/  # Vuelve de Google/Facebook y crea la sesión
-│  │     └─ viajes/[id]/cupos/         # Asientos libres en vivo (JSON)
-│  ├─ components/          # Encabezado, barra inferior, tarjetas y formularios
-│  └─ lib/
-│     ├─ actions/          # Server Actions: auth, trips, reservations
-│     ├─ session.ts        # Cookie de sesión + regla de perfil completo
-│     ├─ oauth.ts          # Google y Facebook (authorization code)
-│     ├─ queries.ts        # Consultas de lectura (buscar, detalle, paneles)
-│     ├─ stats.ts          # Reputación, presentismo e historial
-│     ├─ validate.ts       # Normalización de teléfonos, WhatsApp y textos
-│     └─ notify.ts         # Envío de códigos (consola / Twilio)
-├─ .env.example            # Plantilla de variables de entorno
-└─ next.config.ts
-```
+- Sesión con **JWT HS256** firmado en cookie **`httpOnly`**, `SameSite=Lax` y `Secure` en
+  producción. Sin `AUTH_SECRET` no se pueden falsificar sesiones.
+- Cada Server Action verifica **sesión y propiedad** del recurso (por ejemplo, solo el conductor
+  dueño del viaje puede cancelarlo).
+- Aceptar un asiento usa **transacción + condición de cupo**: no se puede sobrevender.
+- El teléfono del conductor se oculta hasta que exista reserva confirmada o asistida.
+- Los textos se limpian y se limitan en longitud antes de guardarse.
+- No hay pagos, comisiones ni datos de tarjetas: el dinero se arregla entre las partes.
 
 ---
 
-## Alcance del MVP y próximos pasos
+## Roadmap
 
-**Incluido:** publicar/buscar/reservar con cupos en vivo, login en 1 clic, verificación de teléfono,
-perfil con foto, reputación, presentismo, WhatsApp, estados del viaje (activo/completo/cancelado/realizado).
+**Ya está:** publicar, buscar, pedir asiento con aprobación del conductor, cupos en vivo, login con
+Google/Facebook, verificación de teléfono, perfil con foto, reputación, presentismo, WhatsApp y
+estados del viaje.
 
-**Fuera de esta versión (roadmap):**
-- Pagos o señas dentro de la app (hoy el pago se arregla entre las partes).
-- Notificaciones push o recordatorios automáticos antes de la salida.
-- Chat interno (hoy se usa WhatsApp directo).
-- Denuncias y moderación (el campo `isAdmin` ya está previsto en el modelo).
-- Búsqueda por cercanía/geolocalización y viajes recurrentes.
-- Verificación de identidad más fuerte (documento) para viajes largos.
+**Próximo:**
+- **Notificaciones sin entrar a la web**: Web Push (PWA) para que al conductor le llegue el aviso de
+  una solicitud al teléfono, con la bandeja in-app como respaldo. Es gratis y no depende de terceros.
+- **Recordatorios** 24 h y 2 h antes de la salida.
+- **Retención del asiento**: que la solicitud reserve el lugar por 30 minutos y se libere sola si el
+  conductor no responde.
+- **Chat interno** para no salir a WhatsApp.
+- **Denuncias y moderación** (el campo `isAdmin` ya está previsto en el modelo).
+- **Viajes recurrentes** (misma ruta, todos los días) y búsqueda por cercanía.
+- **Verificación más fuerte** (documento) para viajes largos.
+
+**Descartado por ahora:** pagos dentro de la app y comisiones. La idea es que sea gratis para quien
+viaja.
+
+---
+
+## Sobre este proyecto
+
+Lo hice para resolver algo concreto de mi zona: moverme entre pueblos sin depender de un grupo de
+WhatsApp. Me interesaba especialmente la parte de confianza (identidad verificada, reputación,
+presentismo) porque es lo que hace que compartir un auto funcione entre desconocidos.
+
+Y lo usé como **prueba de desarrollo junto a IA**: el objetivo era ver si un agente podía sostener
+un proyecto completo —modelo de datos, reglas de negocio, diseño, autenticación y deploy— siempre
+conmigo tomando las decisiones. El resultado está a la vista y sigue en construcción.
+
+Si querés probarlo o darme una mano con ideas, escribime.
+
+---
+
+## Licencia
+
+Código publicado para mostrar el trabajo. Si querés reutilizarlo, escribime primero.
