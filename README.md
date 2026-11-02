@@ -259,7 +259,7 @@ Cualquier otro email crea una persona nueva de prueba.
 | Variable | Obligatoria | Para qué |
 | --- | --- | --- |
 | `DATABASE_URL` | Sí | SQLite local (`file:./dev.db`) o Postgres en producción. |
-| `DIRECT_URL` | No | Solo en producción con Supabase: conexión directa (puerto 5432) para `prisma db push`. |
+| `DIRECT_URL` / `DATABASE_URL_UNPOOLED` | No | Conexión directa para `prisma db push`. Supabase usa `DIRECT_URL`; Neon inyecta `DATABASE_URL_UNPOOLED`. |
 | `APP_URL` | Sí | URL pública; se usa para armar los callbacks de OAuth. |
 | `AUTH_SECRET` | Sí | Firma la cookie de sesión. Larga y aleatoria. |
 | `DEMO_LOGIN` | No | `"false"` apaga el acceso de prueba. En el demo público queda `"true"`. |
@@ -312,14 +312,16 @@ La app ya viene preparada:
    > `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
 
 4. **Deploy**. El script `vercel-build` se encarga del resto: genera el schema Postgres (agregando
-   `directUrl` si existe `DIRECT_URL`), crea las tablas (`prisma db push`), compila y publica.
+   `directUrl` si existe `DIRECT_URL` o `DATABASE_URL_UNPOOLED`), crea las tablas
+   (`prisma db push`), compila y publica.
 5. **Datos de ejemplo (opcional)**, una sola vez desde tu máquina, apuntando a la base de
    producción:
 
    ```bash
-   $env:DATABASE_URL="postgresql://..."      # cadena de producción (pooler)
-   $env:DIRECT_URL="postgresql://..."        # solo con Supabase (puerto 5432)
-   npm run db:seed:prod                      # crea las tablas y carga el seed
+   $env:DATABASE_URL="postgresql://..."           # cadena de producción (pooler)
+   $env:DIRECT_URL="postgresql://..."             # Supabase: puerto 5432
+   $env:DATABASE_URL_UNPOOLED="postgresql://..."  # Neon: la inyecta Vercel
+   npm run db:seed:prod                           # crea las tablas y carga el seed
    ```
 
 6. Si querés que funcione el login con Google/Facebook en producción, agregá los callbacks del
