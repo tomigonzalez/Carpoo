@@ -1,0 +1,45 @@
+# Carpoo en un solo servidor: la web y la base en la misma máquina.
+#
+#   docker compose up -d --build
+#
+# El volumen "carpoo-db" guarda la base SQLite. Caddy se encarga del HTTPS.
+
+services:
+  carpoo:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "file:/data/carpoo.db"
+      APP_URL: "${APP_URL}"
+      AUTH_SECRET: "${AUTH_SECRET}"
+      DEMO_LOGIN: "${DEMO_LOGIN:-true}"
+      TZ: "America/Argentina/Buenos_Aires"
+      # Opcional: login con Google/Facebook
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      FACEBOOK_CLIENT_ID: "${FACEBOOK_CLIENT_ID:-}"
+      FACEBOOK_CLIENT_SECRET: "${FACEBOOK_CLIENT_SECRET:-}"
+    volumes:
+      - carpoo-db:/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: "${SITE_ADDRESS:-localhost}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - carpoo
+
+volumes:
+  carpoo-db:
+  caddy-data:
+  caddy-config:

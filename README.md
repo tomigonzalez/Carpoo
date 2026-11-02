@@ -110,6 +110,7 @@ queda lugar. Carpoo resuelve tres cosas concretas:
 | OAuth | Implementación propia en `src/lib/oauth.ts` | Flujo *authorization code* de Google y Facebook, sin librerías extra. |
 | SMS | **Twilio** (opcional) | Verificación real del teléfono; sin claves, el código se muestra en pantalla. |
 | Tipografías | **Bricolage Grotesque** + **Instrument Sans** (autohospedadas, OFL) | Sin depender de Google Fonts en tiempo de ejecución. |
+| Deploy | **Vercel + Neon** o **Docker + Caddy en un VPS** | Las dos opciones están listas: una gratis y sin mantenimiento, la otra con todo en un solo servidor. |
 
 > Las páginas leen datos vivos (viajes, cupos, reservas), por eso `cacheComponents: false` y render
 > dinámico clásico. No hay caché que pueda mostrar un cupo viejo.
@@ -120,6 +121,9 @@ queda lugar. Carpoo resuelve tres cosas concretas:
 
 ```
 Carpoo/
+├─ Dockerfile                # Imagen de producción (Next.js + SQLite)
+├─ docker-compose.yml        # App + Caddy + volumen de la base, en un solo host
+├─ Caddyfile                 # HTTPS automático
 ├─ prisma/
 │  ├─ schema.prisma          # Modelo de datos (User, Trip, Reservation, Review)
 │  ├─ seed.mts               # Datos de ejemplo (npm run db:seed)
@@ -309,6 +313,70 @@ La app ya viene preparada:
 
 > En producción `DEMO_LOGIN="true"` permite que cualquiera entre con un email. Para el demo de
 > portafolio es a propósito; en un producto real va en `"false"`.
+
+---
+
+## Despliegue en un solo servidor (Docker)
+
+Si preferís **una sola máquina y una sola factura**, en vez de dividir web y base en dos servicios:
+el `Dockerfile` y el `docker-compose.yml` ya están listos. Levantan la app, la base **SQLite dentro
+de un volumen** y un **Caddy** que resuelve el HTTPS solo.
+
+```
+┌──────────────────────────────┐
+│  VPS                         │
+│  caddy   → HTTPS automático  │
+│  carpoo  → Next.js :3000     │
+│  volumen → /data/carpoo.db   │
+└──────────────────────────────┘
+```
+
+**Requisitos:** un VPS con Docker (1-2 GB de RAM alcanzan) y, si querés HTTPS con dominio propio,
+apuntar el DNS a la IP. Sin dominio podés usar `carpoo.TU-IP.nip.io`, que resuelve a tu servidor y
+también obtiene certificado válido.
+
+```bash
+# 1. En el servidor
+git clone https://github.com/tomigonzalez/Carpoo.git && cd Carpoo
+
+# 2. Variables (usá --env-file para no pisar tu .env de desarrollo)
+cp .env.docker.example .env.docker
+nano .env.docker      # SITE_ADDRESS, APP_URL y AUTH_SECRET
+
+# 3. Levantar (la primera vez compila la imagen)
+docker compose --env-file .env.docker up -d --build
+
+# 4. Datos de ejemplo (opcional, solo la primera vez)
+docker compose --env-file .env.docker exec carpoo npx prisma db seed
+```
+
+La app crea las tablas sola al arrancar (`prisma db push`) y la base vive en el volumen
+`carpoo-db`, así que **sobrevive a reinicios y redeploys**.
+
+**Actualizar** con un push nuevo:
+
+```bash
+git pull && docker compose --env-file .env.docker up -d --build
+```
+
+**Backup** de la base (un archivo, alcanza con copiarlo):
+
+```bash
+docker compose exec carpoo sh -c "cp /data/carpoo.db /data/copia-$(date +%F).db"
+docker compose cp carpoo:/data/copia-2026-11-02.db ./
+```
+
+| | Vercel + Neon | Un VPS con Docker |
+| --- | --- | --- |
+| Costo | $0 | ~USD 4-6/mes (una sola factura) |
+| Mantenimiento | Nulo | Vos: actualizaciones, backups, certificado |
+| Base de datos | Postgres gestionado | SQLite en un volumen |
+| Si se cae el servidor | Sigue andando | Se cae todo |
+| Ideal para | Portfolio, demo | Producto real, control total |
+
+> Nota: `prisma db push` mantiene el schema alineado automáticamente, cómodo para un proyecto
+> chico. Cuando haya usuarios reales conviene pasar a `prisma migrate deploy` con migraciones
+> versionadas.
 
 ---
 
