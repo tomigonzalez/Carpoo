@@ -39,7 +39,8 @@ export function FormularioTelefono({
     <div className="tarjeta">
       <h2 className="tarjeta-titulo">Verificá tu teléfono</h2>
       <p style={{ marginTop: 0, color: "var(--texto-suave)" }}>
-        Te mandamos un código de 6 números para comprobar que el número es tuyo.
+        Te mandamos un código de 6 números por WhatsApp o SMS para comprobar que el número es
+        tuyo.
       </p>
 
       {inicio.error ? <Alerta tipo="error">{inicio.error}</Alerta> : null}

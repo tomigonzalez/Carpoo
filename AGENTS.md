@@ -34,9 +34,10 @@ No hay suite de tests; la verificación es manual contra el servidor.
 ## Puesta en marcha
 
 1. `npm install` (corre `prisma generate` por `postinstall`).
-2. Copiar `.env.example` → `.env` y completar `AUTH_SECRET` (largo y aleatorio).
-3. `npm run db:push && npm run db:seed`.
-4. `npm run dev`.
+2. Copiar `.env.example` → `.env` y completar `AUTH_SECRET`.
+3. Levantar Postgres local: `docker compose -f docker-compose.dev.yml up -d` (puerto 5433).
+4. `npm run db:push` (y opcional `npm run db:seed`).
+5. `npm run dev`.
 
 Emails de prueba (login "Acceso de prueba", sin contraseña): `maria@ejemplo.com`,
 `jorge@ejemplo.com`, `lucia@ejemplo.com`, `diego@ejemplo.com` y `ana@ejemplo.com` (esta última
@@ -45,7 +46,7 @@ Emails de prueba (login "Acceso de prueba", sin contraseña): `maria@ejemplo.com
 ## Arquitectura
 
 - **Next.js 16.4 (App Router) + Server Actions + React 19 + TypeScript**.
-- **Prisma 6 + SQLite** (`prisma/dev.db`). En producción, migrar a Postgres (ver README).
+- **Prisma 6 + PostgreSQL**. Local en Docker (`docker-compose.dev.yml`, puerto 5433); producción en Neon. `prisma/schema.prisma` es la fuente de verdad y `vercel-build` aplica cambios de estructura a producción con `prisma db push`.
 - **Sin librerías de auth**: OAuth propio de Google/Facebook + sesión JWT (`jose`) en cookie
   `httpOnly` `carpoo_sesion`. Todo en `src/lib/`.
 - `cacheComponents: false` en `next.config.ts`: las páginas leen datos vivos de la DB.

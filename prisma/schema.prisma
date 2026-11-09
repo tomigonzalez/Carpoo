@@ -1,13 +1,15 @@
 // Base de datos para el MVP de Carpoo (viajes compartidos entre pueblos).
-// SQLite: un solo archivo, no requiere instalar nada más. Ideal para probar y
-// para un despliegue chico en un VPS.
+// PostgreSQL: en local se levanta con Docker (ver docker-compose.dev.yml) y en
+// producción usa Neon (ver README). El schema es la fuente de verdad: los
+// cambios se prueban en local con `prisma db push` y llegan a producción cuando
+// Vercel ejecuta el deploy (vercel-build).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

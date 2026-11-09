@@ -1,0 +1,71 @@
+# Entorno de desarrollo local: base + app, todo en Docker.
+# También podés correr solo la base y usar `npm run dev` en tu máquina.
+#
+# Uso (todo junto):
+#   docker compose -f docker-compose.dev.yml up --build
+#   (en otra terminal, la primera vez o tras cambios de schema)
+#   docker compose -f docker-compose.dev.yml exec app npx prisma db push
+#
+# Uso (solo base, app en tu máquina):
+#   docker compose -f docker-compose.dev.yml up -d db
+#   npm run db:push && npm run dev
+#
+# Conexión DB desde tu máquina/TablePlus:
+#   postgresql://carpoo:carpoo@localhost:5433/carpoo
+#
+# Resetear la base local (borra datos):
+#   docker compose -f docker-compose.dev.yml down -v
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: carpoo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: carpoo
+      POSTGRES_PASSWORD: carpoo
+      POSTGRES_DB: carpoo
+    ports:
+      # 5433 en el host para no chocar con un Postgres local en Windows (5432).
+      - "5433:5432"
+    volumes:
+      # En Postgres 18+ el mount va en /var/lib/postgresql (no /data)
+      - carpoo_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carpoo -d carpoo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: carpoo-app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Dentro de Docker la DB se alcanza por el nombre del servicio, puerto interno 5432.
+      DATABASE_URL: postgresql://carpoo:carpoo@db:5432/carpoo
+      APP_URL: http://localhost:3000
+      # Hot reload fiable con bind mounts en Windows.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      # Preservan dependencias/binarios Linux dentro del contenedor.
+      - app_node_modules:/app/node_modules
+      - app_next:/app/.next
+
+volumes:
+  carpoo_pgdata:
+    # Reutiliza el volumen local existente (conserva datos restaurados).
+    name: carpoo_pgdata
+  app_node_modules:
+  app_next:
+
