@@ -175,44 +175,77 @@ Carpoo/
 - **Privacidad del teléfono**: se oculta en las consultas hasta que exista reserva confirmada.
 - **Cupos en vivo**: un endpoint liviano devuelve los asientos cada 7 segundos, sin recargar la
   página.
-- **SQLite en local, Postgres en Vercel**: `scripts/preparar-postgres.mjs` genera una copia del
-  schema con `provider = "postgresql"` solo durante el build. El desarrollo local sigue siendo un
-  archivo y no necesita instalar una base.
+- **PostgreSQL en local y en producción**: el schema (`prisma/schema.prisma`) es la fuente de verdad.
+  En local la base corre en Docker (`docker-compose.dev.yml`); en Vercel/Neon la actualiza el deploy.
+  `scripts/preparar-postgres.mjs` genera la copia que usa el build y agrega la conexión directa
+  (`directUrl`) cuando existe.
 
 ---
 
 ## Correr el proyecto en local
 
-Requisitos: **Node 20.9+** (probado con 22 y 24) y npm. No hace falta instalar ninguna base de datos.
+Requisitos: **Node 20.9+** (probado con 22 y 24), npm y **Docker Desktop** (para la base Postgres).
 
 ```bash
-# 1. Dependencias (corre prisma generate solo)
+# 1. Dependencias
 npm install
 
 # 2. Variables de entorno
 cp .env.example .env        # Windows: Copy-Item .env.example .env
-
-# 3. Generar la clave de sesión y pegarla en AUTH_SECRET
+# Generá AUTH_SECRET y pegalo en .env:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
-# 4. Base de datos + datos de ejemplo
+# 3. Levantar Postgres local (puerto 5433) y crear/actualizar tablas
+docker compose -f docker-compose.dev.yml up -d
 npm run db:push
+
+# (opcional) datos de ejemplo locales
 npm run db:seed
 
-# 5. Levantar
+# 4. Levantar la app (con hot reload)
 npm run dev
 ```
 
-Abrí **http://localhost:3000**.
-
-`.env` mínimo para probar:
+Abrí [http://localhost:3000](http://localhost:3000). `.env` mínimo para probar:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://carpoo:carpoo@localhost:5433/carpoo"
 APP_URL="http://localhost:3000"
 AUTH_SECRET="<la clave larga que generaste>"
 DEMO_LOGIN="true"
 ```
+
+Podés conectarte a la base con **TablePlus** (o trabajar directo con Docker): host `localhost`,
+puerto `5433`, usuario/base/clave `carpoo`.
+
+### Todo en Docker (app + base)
+
+Si querés levantar también el front en Docker (mismo comando para BD y app):
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+# primera vez / tras cambios de schema:
+docker compose -f docker-compose.dev.yml exec app npx prisma db push
+```
+
+Atajos npm: `npm run docker:up` (app+db), `npm run docker:up:db` (solo DB),
+`npm run docker:down`. La app queda en [http://localhost:3000](http://localhost:3000) y la DB
+sigue accesible desde TablePlus en `localhost:5433`. Dentro de Docker la app usa el host `db:5432`
+(configurado en el compose), así que tu `.env` local puede seguir apuntando a `localhost:5433`.
+
+### Cambios de base de datos: local → producción
+
+El flujo para que un cambio de estructura llegue a producción es:
+
+1. **Modificá el schema** en `prisma/schema.prisma` (es la fuente de verdad).
+2. **Probá en local** contra tu Postgres Docker: `npx prisma db push` y verificá con `npm run dev` y/o TablePlus.
+3. **Subí el cambio**: `git commit` + `git push`. Al deployar en Vercel se ejecuta `vercel-build`,
+   que genera el schema de deploy y corre `prisma db push` contra **Neon** → la estructura se aplica
+   en producción.
+
+> `prisma db push` sincroniza **estructura** (no copia filas). No apuntes tu `.env` local a la base
+> de producción: usá siempre la base Docker local. Si un cambio es destructivo (borrar/renombrar
+> columnas), revisá el aviso de Prisma antes de aplicarlo.
 
 > **Zona horaria:** las fechas se formatean en el servidor. Para ver las horas de Argentina,
 > arrancá con `TZ=America/Argentina/Buenos_Aires` (Linux/macOS) o configurá la zona en Windows.
@@ -265,7 +298,8 @@ Cualquier otro email crea una persona nueva de prueba.
 | `DEMO_LOGIN` | No | `"false"` apaga el acceso de prueba. En el demo público queda `"true"`. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Login con Google. Sin claves, el botón aparece deshabilitado. |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | No | Login con Facebook. |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` | No | Envío real de SMS. Sin esto, el código va a la consola y a la pantalla. |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` | No | Envío real del código por **SMS** o **WhatsApp** (Twilio). Si `TWILIO_FROM` empieza con `whatsapp:`, se envía por WhatsApp. Sin proveedor, el código se muestra en pantalla (pruebas). |
+| `TWILIO_WHATSAPP_FROM` | No | Alternativa a `TWILIO_FROM` para WhatsApp, ej. `whatsapp:+14155238886`. |
 
 ### Callbacks de OAuth
 
@@ -273,6 +307,19 @@ Cualquier otro email crea una persona nueva de prueba.
 - Facebook: `https://TU-DOMINIO/api/auth/callback/facebook`
 
 Se cargan en la consola de cada proveedor y tienen que coincidir con `APP_URL`.
+
+### Verificación real por WhatsApp
+
+La app ya soporta enviar el código por WhatsApp usando Twilio. Para activarlo:
+
+1. Creá una cuenta en [Twilio](https://www.twilio.com/try-twilio) y obtené `TWILIO_ACCOUNT_SID` y `TWILIO_AUTH_TOKEN`.
+2. **Para probar rápido (sandbox, gratis):** en la consola de Twilio activá el *WhatsApp Sandbox*, enviá desde tu WhatsApp el mensaje de unión que te indique al número del sandbox y cargá:
+   ```env
+   TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"   # número del sandbox de Twilio
+   ```
+   > El sandbox solo entrega mensajes a números que hicieron el "join". Sirve para probar que funciona, no para usuarios reales.
+3. **Para usuarios reales (producción):** necesitás un *sender* de WhatsApp aprobado (número propio o el de Twilio) y, según el caso, una plantilla de autenticación aprobada por Meta. La opción más simple para OTP es [Twilio Verify](https://www.twilio.com/docs/verify) con el canal WhatsApp.
+4. Cargá las variables en Vercel y hacé **Redeploy**. Con un proveedor configurado, el código **ya no se muestra en pantalla**: se envía de verdad.
 
 ---
 

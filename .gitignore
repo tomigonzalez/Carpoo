@@ -34,9 +34,15 @@ yarn-error.log*
 .env*
 !.env.example
 
-# base de datos local SQLite
+# base de datos local SQLite (legado)
 /prisma/*.db
 /prisma/*.db-journal
+
+# dumps de base de datos (pueden contener datos sensibles)
+/backup-*.dump
+/backup-*.sql
+/*.dump
+/*.sql
 
 # schema de Postgres generado para el deploy
 /prisma/schema.postgres.prisma

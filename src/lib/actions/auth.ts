@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/session";
-import { isDemoMode, sendVerificationCode } from "@/lib/notify";
+import { hasVerificationProvider, isDemoMode, sendVerificationCode } from "@/lib/notify";
 import { cleanImageUrl, cleanText, generatePhoneCode, normalizePhone } from "@/lib/validate";
 import { safeNext, type ActionState } from "@/lib/action-state";
 
@@ -73,12 +73,23 @@ export async function startPhoneVerification(
       phoneVerified: false,
     },
   });
-  await sendVerificationCode(phone, code);
+  const enviado = await sendVerificationCode(phone, code);
   revalidatePath("/perfil");
 
+  if (!enviado.ok && hasVerificationProvider()) {
+    return {
+      error:
+        "No pudimos enviar el código por WhatsApp/SMS. Revisá la configuración del proveedor o probá de nuevo en un rato.",
+    };
+  }
+
+  // Sin proveedor (desarrollo/local) mostramos el código en pantalla para poder probar.
+  const sinProveedor = !hasVerificationProvider();
   return {
-    ok: "Te enviamos un código de 6 números. Escribilo acá abajo.",
-    info: isDemoMode() ? `Modo prueba: tu código es ${code}` : undefined,
+    ok: sinProveedor
+      ? "Código generado (modo prueba, sin proveedor configurado). Escribilo acá abajo."
+      : "Te enviamos un código de 6 números por WhatsApp/SMS. Escribilo acá abajo.",
+    info: sinProveedor ? `Modo prueba: tu código es ${code}` : undefined,
   };
 }
 
