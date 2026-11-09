@@ -2,11 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/session";
 import { hasVerificationProvider, isDemoMode, sendVerificationCode } from "@/lib/notify";
 import { cleanImageUrl, cleanText, generatePhoneCode, normalizePhone } from "@/lib/validate";
 import { safeNext, type ActionState } from "@/lib/action-state";
+
+function emailValido(email: string | null): email is string {
+  return Boolean(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+}
 
 /**
  * Acceso de prueba con un email, sin depender de Google/Facebook.
@@ -48,6 +53,98 @@ export async function loginWithDemo(
 export async function logout(): Promise<void> {
   await destroySession();
   redirect("/");
+}
+
+/** Registro con email y contraseña. */
+export async function registerWithEmail(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const email = cleanText(formData.get("email"), 120)?.toLowerCase() ?? null;
+  const name = cleanText(formData.get("name"), 60);
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  const next = safeNext(cleanText(formData.get("next"), 300));
+
+  if (!emailValido(email)) {
+    return { error: "Escribí un email válido, por ejemplo: maria@gmail.com" };
+  }
+  if (!name) {
+    return { error: "Escribí tu nombre y apellido." };
+  }
+  if (password.length < 8) {
+    return { error: "La contraseña tiene que tener al menos 8 caracteres." };
+  }
+  if (password.length > 72) {
+    return { error: "La contraseña es demasiado larga." };
+  }
+  if (password !== confirm) {
+    return { error: "Las contraseñas no coinciden." };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return {
+      error:
+        "Ya existe una cuenta con ese email. Iniciá sesión o usá Google/Facebook si te registraste así.",
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: {
+      email,
+      name,
+      provider: "email",
+      providerId: email,
+      passwordHash,
+      image: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`,
+      lastLoginAt: new Date(),
+    },
+  });
+
+  await createSession(user.id);
+  redirect(next);
+}
+
+/** Inicio de sesión con email y contraseña. */
+export async function loginWithEmail(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const email = cleanText(formData.get("email"), 120)?.toLowerCase() ?? null;
+  const password = String(formData.get("password") ?? "");
+  const next = safeNext(cleanText(formData.get("next"), 300));
+
+  if (!emailValido(email)) {
+    return { error: "Escribí un email válido." };
+  }
+  if (!password) {
+    return { error: "Escribí tu contraseña." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || !user.passwordHash) {
+    return {
+      error:
+        "Email o contraseña incorrectos. Si te registraste con Google o Facebook, usá ese botón.",
+    };
+  }
+
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) {
+    return {
+      error:
+        "Email o contraseña incorrectos. Si te registraste con Google o Facebook, usá ese botón.",
+    };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+  await createSession(user.id);
+  redirect(next);
 }
 
 /** Paso 1: guardamos el teléfono y enviamos el código. */
