@@ -13,7 +13,7 @@ export default async function InicioPage() {
     <>
       <section className="hero">
         <div className="hero-contenido">
-          <p className="hero-etiqueta">Villarino, Médanos y Bahía Blanca</p>
+          <p className="hero-etiqueta">Villarino y al rededores</p>
           <h1>De un pueblo a otro, con lugar para vos.</h1>
           <p className="hero-texto">
             Encontrá quién viaja para el mismo lado, reservá tu asiento y coordiná por WhatsApp.

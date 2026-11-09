@@ -20,8 +20,9 @@ model User {
   name          String
   email         String?  @unique
   image         String? // foto de perfil (URL)
-  provider      String // "google" | "facebook" | "demo"
-  providerId    String? // id del usuario en Google/Facebook
+  provider      String // "google" | "facebook" | "demo" | "email"
+  providerId    String? // id en el proveedor (o el email para cuentas "email")
+  passwordHash  String? // solo para cuentas con email + contraseña
 
   // Verificación de identidad
   phone         String? // teléfono normalizado, ej: +5491122334455
