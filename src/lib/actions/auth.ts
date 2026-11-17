@@ -6,7 +6,9 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/session";
 import { hasVerificationProvider, isDemoMode, sendVerificationCode } from "@/lib/notify";
-import { cleanImageUrl, cleanText, generatePhoneCode, normalizePhone } from "@/lib/validate";
+import { cleanImageUrl, cleanText, normalizePhone } from "@/lib/validate";
+import { generatePhoneCode, hashPhoneCode, verifyPhoneCode } from "@/lib/phone-code";
+import { dentroDelLimite, ipDeLaRequest } from "@/lib/rate-limit";
 import { safeNext, type ActionState } from "@/lib/action-state";
 
 function emailValido(email: string | null): email is string {
@@ -25,26 +27,44 @@ export async function loginWithDemo(
     return { error: "El acceso de prueba está desactivado." };
   }
 
-  const email = cleanText(formData.get("email"), 120)?.toLowerCase();
-  if (!email || !email.includes("@") || !email.includes(".")) {
+  const ip = await ipDeLaRequest();
+  if (!dentroDelLimite(`demo:${ip}`, 10, 60_000)) {
+    return { error: "Demasiados intentos. Esperá un minuto y probá de nuevo." };
+  }
+
+  const email = cleanText(formData.get("email"), 120)?.toLowerCase() ?? null;
+  if (!emailValido(email)) {
     return { error: "Escribí un email válido, por ejemplo: maria@gmail.com" };
   }
 
   const name = cleanText(formData.get("name"), 60) ?? email.split("@")[0];
   const next = safeNext(cleanText(formData.get("next"), 300));
 
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: { lastLoginAt: new Date() },
-    create: {
-      email,
-      name,
-      provider: "demo",
-      providerId: email,
-      image: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`,
-      lastLoginAt: new Date(),
-    },
-  });
+  // Nunca dejamos que el acceso de prueba pise una cuenta real (email,
+  // Google o Facebook): sería una toma de cuenta.
+  const existente = await prisma.user.findUnique({ where: { email } });
+  if (existente && existente.provider !== "demo") {
+    return {
+      error:
+        "Ese email ya tiene una cuenta. Ingresá con tu contraseña o con Google/Facebook.",
+    };
+  }
+
+  const user = existente
+    ? await prisma.user.update({
+        where: { id: existente.id },
+        data: { lastLoginAt: new Date() },
+      })
+    : await prisma.user.create({
+        data: {
+          email,
+          name,
+          provider: "demo",
+          providerId: email,
+          image: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`,
+          lastLoginAt: new Date(),
+        },
+      });
 
   await createSession(user.id);
   redirect(next);
@@ -60,6 +80,11 @@ export async function registerWithEmail(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const ip = await ipDeLaRequest();
+  if (!dentroDelLimite(`registro:${ip}`, 5, 10 * 60_000)) {
+    return { error: "Demasiados registros desde esta conexión. Probá en unos minutos." };
+  }
+
   const email = cleanText(formData.get("email"), 120)?.toLowerCase() ?? null;
   const name = cleanText(formData.get("name"), 60);
   const password = String(formData.get("password") ?? "");
@@ -112,6 +137,11 @@ export async function loginWithEmail(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const ip = await ipDeLaRequest();
+  if (!dentroDelLimite(`login:${ip}`, 10, 15 * 60_000)) {
+    return { error: "Demasiados intentos de ingreso. Probá en unos minutos." };
+  }
+
   const email = cleanText(formData.get("email"), 120)?.toLowerCase() ?? null;
   const password = String(formData.get("password") ?? "");
   const next = safeNext(cleanText(formData.get("next"), 300));
@@ -155,9 +185,25 @@ export async function startPhoneVerification(
   const user = await getCurrentUser();
   if (!user) return { error: "Primero iniciá sesión." };
 
+  const ip = await ipDeLaRequest();
+  if (!dentroDelLimite(`codigo:${ip}`, 10, 60 * 60_000)) {
+    return { error: "Pediste muchos códigos. Probá de nuevo en una hora." };
+  }
+
+  // Sin proveedor y sin modo demo no se puede probar posesión del teléfono:
+  // mostrar el código en producción permitiría verificar cualquier número.
+  const modoPrueba = isDemoMode() && !hasVerificationProvider();
+  if (!modoPrueba && !hasVerificationProvider()) {
+    return { error: "La verificación por teléfono no está disponible en este momento." };
+  }
+
   const phone = normalizePhone(String(formData.get("phone") ?? ""));
   if (!phone) {
     return { error: "Revisá el número. Ejemplo: 11 1234 5678 o 0341 555 1234." };
+  }
+
+  if (user.phoneCodeSentAt && Date.now() - user.phoneCodeSentAt.getTime() < 60_000) {
+    return { error: "Esperá un minuto antes de pedir otro código." };
   }
 
   const code = generatePhoneCode();
@@ -165,8 +211,10 @@ export async function startPhoneVerification(
     where: { id: user.id },
     data: {
       phone,
-      phoneCode: code,
+      phoneCode: hashPhoneCode(code),
       phoneCodeExp: new Date(Date.now() + 10 * 60 * 1000),
+      phoneCodeAttempts: 0,
+      phoneCodeSentAt: new Date(),
       phoneVerified: false,
     },
   });
@@ -174,23 +222,26 @@ export async function startPhoneVerification(
   revalidatePath("/perfil");
 
   if (!enviado.ok && hasVerificationProvider()) {
+    // Si el envío falló, el código queda sin validez para no dejar una puerta abierta.
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { phoneCode: null, phoneCodeExp: null },
+    });
     return {
       error:
         "No pudimos enviar el código por WhatsApp/SMS. Revisá la configuración del proveedor o probá de nuevo en un rato.",
     };
   }
 
-  // Sin proveedor (desarrollo/local) mostramos el código en pantalla para poder probar.
-  const sinProveedor = !hasVerificationProvider();
   return {
-    ok: sinProveedor
+    ok: modoPrueba
       ? "Código generado (modo prueba, sin proveedor configurado). Escribilo acá abajo."
       : "Te enviamos un código de 6 números por WhatsApp/SMS. Escribilo acá abajo.",
-    info: sinProveedor ? `Modo prueba: tu código es ${code}` : undefined,
+    info: modoPrueba ? `Modo prueba: tu código es ${code}` : undefined,
   };
 }
 
-/** Paso 2: confirmamos el código. */
+/** Paso 2: confirmamos el código (máximo 5 intentos por código). */
 export async function confirmPhoneCode(
   _prev: ActionState,
   formData: FormData,
@@ -198,19 +249,36 @@ export async function confirmPhoneCode(
   const user = await getCurrentUser();
   if (!user) return { error: "Primero iniciá sesión." };
 
+  if (!dentroDelLimite(`confirmar:${user.id}`, 5, 10 * 60_000)) {
+    return { error: "Demasiados intentos. Pedí un código nuevo." };
+  }
+
   const code = cleanText(formData.get("code"), 10)?.replace(/\D/g, "");
-  if (!code) return { error: "Escribí el código de 6 números." };
+  if (!code || code.length !== 6) return { error: "Escribí el código de 6 números." };
 
   if (!user.phoneCode || !user.phoneCodeExp || user.phoneCodeExp < new Date()) {
     return { error: "El código venció. Pedí uno nuevo." };
   }
-  if (code !== user.phoneCode) {
+  if (user.phoneCodeAttempts >= 5) {
+    return { error: "Agotaste los intentos. Pedí un código nuevo." };
+  }
+  if (!verifyPhoneCode(user.phoneCode, code)) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { phoneCodeAttempts: { increment: 1 } },
+    });
     return { error: "El código no es correcto. Fijate y probá de nuevo." };
   }
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { phoneVerified: true, phoneCode: null, phoneCodeExp: null },
+    data: {
+      phoneVerified: true,
+      phoneCode: null,
+      phoneCodeExp: null,
+      phoneCodeAttempts: 0,
+      phoneCodeSentAt: null,
+    },
   });
   revalidatePath("/perfil");
   return { ok: "¡Listo! Tu teléfono quedó verificado." };

@@ -295,7 +295,7 @@ Cualquier otro email crea una persona nueva de prueba.
 | `DIRECT_URL` / `DATABASE_URL_UNPOOLED` | No | Conexión directa para `prisma db push`. Supabase usa `DIRECT_URL`; Neon inyecta `DATABASE_URL_UNPOOLED`. |
 | `APP_URL` | Sí | URL pública; se usa para armar los callbacks de OAuth. |
 | `AUTH_SECRET` | Sí | Firma la cookie de sesión. Larga y aleatoria. |
-| `DEMO_LOGIN` | No | `"false"` apaga el acceso de prueba. En el demo público queda `"true"`. |
+| `DEMO_LOGIN` | No | Hay que ponerlo en `"true"` para el demo/local; si falta, el acceso de prueba queda apagado. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Login con Google. Sin claves, el botón aparece deshabilitado. |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | No | Login con Facebook. |
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` | No | Envío real del código por **SMS** o **WhatsApp** (Twilio). Si `TWILIO_FROM` empieza con `whatsapp:`, se envía por WhatsApp. Sin proveedor, el código se muestra en pantalla (pruebas). |
@@ -374,8 +374,9 @@ La app ya viene preparada:
 6. Si querés que funcione el login con Google/Facebook en producción, agregá los callbacks del
    dominio de Vercel en cada consola. Si no, el **acceso de prueba** sigue funcionando.
 
-> En producción `DEMO_LOGIN="true"` permite que cualquiera entre con un email. Para el demo de
-> portafolio es a propósito; en un producto real va en `"false"`.
+> En producción `DEMO_LOGIN="true"` permite entrar con un email a cualquier cuenta **que no sea
+> real** (las cuentas con contraseña, Google o Facebook nunca se pisan). Para el demo de portafolio
+> está bien; en un producto real va en `"false"` (o se omite la variable).
 
 ---
 

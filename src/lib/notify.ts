@@ -1,19 +1,20 @@
 /**
  * Envío de códigos de verificación por SMS o WhatsApp (Twilio).
  *
- * - Sin proveedor configurado: el código queda en la consola del servidor y la
- *   pantalla lo muestra como ayuda (modo prueba/local).
+ * - Sin proveedor configurado y con `DEMO_LOGIN="true"`: el código se muestra
+ *   en pantalla para poder probar en local. NUNCA se escribe en los logs.
  * - Con Twilio configurado: se envía de verdad. Si `TWILIO_FROM` (o
  *   `TWILIO_WHATSAPP_FROM`) empieza con `whatsapp:`, el mensaje va por
  *   WhatsApp; si no, por SMS.
  */
 
-export const isDemoMode = () => process.env.DEMO_LOGIN !== "false";
+/** El acceso de prueba es opt-in: si falta la variable, queda apagado. */
+export const isDemoMode = () => process.env.DEMO_LOGIN === "true";
 
 function twilioConfig() {
   const sid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const token = process.env.TWILIO_AUTH_TOKEN?.trim();
-  // Para WhatsApp se puede usar TWILIO_WHATSAPP_FROM o un TWILIO_FROM con prefijo whatsapp:
+  // Para WhatsApp se puede usar TWILIO_WHATSAPP_FROM o TWILIO_FROM con prefijo:
   const from =
     process.env.TWILIO_WHATSAPP_FROM?.trim() || process.env.TWILIO_FROM?.trim();
   if (!sid || !token || !from) return null;
@@ -34,8 +35,8 @@ export async function sendVerificationCode(
   phone: string,
   code: string,
 ): Promise<SendResult> {
-  console.info(`[Carpoo] Código de verificación para ${phone}: ${code}`);
-
+  // No loguear el teléfono ni el código: los logs de Vercel son accesibles
+  // para todo el equipo y pueden quedar retenidos.
   const config = twilioConfig();
   if (!config) return { ok: false, error: "NO_PROVIDER" };
 
@@ -63,14 +64,17 @@ export async function sendVerificationCode(
     );
 
     if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error("[Carpoo] Twilio rechazó el envío:", res.status, detail);
+      // Sin el cuerpo ni el mensaje de error: pueden incluir datos del proveedor.
+      console.error("[Carpoo] Twilio rechazó el envío. Estado:", res.status);
       return { ok: false, error: "PROVIDER_ERROR" };
     }
 
     return { ok: true };
   } catch (error) {
-    console.error("[Carpoo] No se pudo enviar el código:", error);
+    console.error(
+      "[Carpoo] No se pudo enviar el código:",
+      error instanceof Error ? error.name : "desconocido",
+    );
     return { ok: false, error: "NETWORK_ERROR" };
   }
 }

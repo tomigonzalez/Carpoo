@@ -120,7 +120,7 @@ Reglas críticas:
 ## Variables de entorno
 
 `DATABASE_URL`, `APP_URL`, `AUTH_SECRET` (obligatorias). Opcionales: `GOOGLE_CLIENT_ID/SECRET`,
-`FACEBOOK_CLIENT_ID/SECRET`, `DEMO_LOGIN` (default `true` para pruebas; poner `"false"` en
-producción), `TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM` (SMS real; si no están, el código de verificación
-se muestra en pantalla y en consola). Callbacks OAuth:
+`FACEBOOK_CLIENT_ID/SECRET`, `DEMO_LOGIN` (hay que ponerlo explícitamente en `"true"` para el
+demo/local; si falta, queda apagado), `TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM` (SMS real; si no están y
+además `DEMO_LOGIN="true"`, el código se muestra en pantalla —nunca en logs—). Callbacks OAuth:
 `/api/auth/callback/google` y `/api/auth/callback/facebook`.

@@ -51,11 +51,6 @@ export function cleanInt(input: unknown, min: number, max: number): number | nul
   return rounded;
 }
 
-/** Código de 6 dígitos para verificar el teléfono. */
-export function generatePhoneCode(): string {
-  return Math.floor(100_000 + Math.random() * 900_000).toString();
-}
-
 /** Normaliza links de fotos: solo aceptamos http/https. */
 export function cleanImageUrl(input: unknown): string | null {
   const value = cleanText(input, 500);
