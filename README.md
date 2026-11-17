@@ -1,6 +1,6 @@
 # Carpoo
 
-**Viajes compartidos entre pueblos, sin grupos de WhatsApp.**
+**Viajes compartidos entre pueblos.**
 
 Carpoo conecta a gente que viaja entre Villarino, Bahía Blanca y alrededores. Un
 conductor publica su viaje (origen, destino, día, hora y asientos) y un pasajero pide un lugar en
