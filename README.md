@@ -195,9 +195,9 @@ cp .env.example .env        # Windows: Copy-Item .env.example .env
 # Generá AUTH_SECRET y pegalo en .env:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
-# 3. Levantar Postgres local (puerto 5433) y crear/actualizar tablas
+# 3. Levantar Postgres local (puerto 5433) y aplicar las migraciones
 docker compose -f docker-compose.dev.yml up -d
-npm run db:push
+npm run db:migrate:deploy
 
 # (opcional) datos de ejemplo locales
 npm run db:seed
@@ -220,19 +220,20 @@ puerto `5433`, usuario/base/clave `carpoo`.
 
 ### Todo en Docker (app + base)
 
-Un solo comando levanta Postgres y la app, **sin crear `.env` ni correr `db push` a mano**:
+Un solo comando levanta Postgres y la app, **sin crear `.env` ni correr migraciones a mano**:
 
 ```bash
 docker compose up --build -d
 ```
 
 El entrypoint del contenedor genera un `AUTH_SECRET` (lo guarda en un volumen, así sobrevive a
-reinicios), aplica el schema con `prisma db push` y carga los datos de ejemplo **solo si la base
-está vacía**. Si querés pasar variables propias (Twilio, Google, etc.), copiá `.env.example` a
-`.env` y descomentá la línea `env_file` en `docker-compose.dev.yml`.
+reinicios), aplica las migraciones con `prisma migrate deploy` y carga los datos de ejemplo **solo
+si la base está vacía**. Si querés pasar variables propias (Twilio, Google, etc.), copiá
+`.env.example` a `.env` y descomentá la línea `env_file` en `docker-compose.dev.yml`.
 
 Atajos npm: `npm run docker:up` (app+db), `npm run docker:up:db` (solo DB),
-`npm run docker:down`. La app queda en [http://localhost:3000](http://localhost:3000) y la DB
+`npm run docker:down`, `npm run docker:reset` (borra la base y vuelve al seed). La app queda en
+[http://localhost:3000](http://localhost:3000) y la DB
 sigue accesible desde TablePlus en `localhost:5433`. Si esos puertos están ocupados:
 
 ```bash
@@ -267,7 +268,8 @@ Comandos útiles para él:
 | `docker compose logs -f app` | Ver los logs de la app. |
 | `docker compose restart app` | Reiniciar la app (sin borrar datos). |
 | `docker compose down` | Apagar todo, conservando la base. |
-| `docker compose down -v` | Apagar y **borrar la base** (para volver al seed). |
+| `npm run docker:reset` | **Botón de deshacer:** borra su base y vuelve al seed. |
+| `docker compose down -v` | Igual que lo anterior, pero sin volver a levantar. |
 
 Si no querés usar Git, también podés mandar un ZIP del repo (sin `node_modules`, `.next` ni `.env`):
 `.dockerignore` ya evita que esos archivos entren a la imagen, pero el ZIP se arma desde el host:
@@ -278,18 +280,70 @@ git archive --format=zip -o Carpoo.zip HEAD
 
 El amigo descomprime, entra a la carpeta y corre `docker compose up --build -d`.
 
+### Quién maneja la base de datos
+
+La idea es que **una sola persona** (la que administra) escriba el schema, el seed y las
+migraciones. El que trabaja del lado del front solo corre comandos: nunca "acomodo" la BD.
+
+Cada persona tiene **su propio volumen** `carpoo_pgdata`. Aunque los dos usen Docker, **no es la
+misma base**: es la misma receta en dos cocinas distintas. Si el otro rompe la suya, la tuya no se
+entera. Él tampoco tiene tu `DATABASE_URL` ni tu `AUTH_SECRET`.
+
+Hay tres protecciones para que un push accidental no te modifique la BD:
+
+1. **`.github/CODEOWNERS`** marca `prisma/`, los compose, el Dockerfile y `.env.example` como
+   archivos de un único dueño. Completá la configuración en GitHub una vez:
+   *Settings → Branches → Branch protection rule* del branch principal, con
+   "Require a pull request before merging" y "Require review from Code Owners". El otro trabaja en
+   una rama `front/...` y abre PR; si toca esos archivos, GitHub te pide tu aprobación.
+2. **`.gitignore`** ignora dumps (`**/*.sql`, `**/*.dump`) en cualquier carpeta. Las migraciones de
+   Prisma están exceptuadas (`!/prisma/migrations/**/*.sql`) para que sí se versionen. Así un dump
+   no entra en el repo con un `git add -A` distraído.
+3. **El entrypoint usa `migrate deploy`, nunca `db push`**. Con migraciones, editar
+   `prisma/schema.prisma` **no cambia la BD**: solo se aplican los archivos de
+   `prisma/migrations/`. Un schema que llegue por git sin su migration correspondiente no hace
+   nada.
+
+Flujo para un cambio de estructura:
+
+```bash
+# Quién administra (en su máquina):
+npm run db:backup                                  # backup antes de tocar nada
+# editá prisma/schema.prisma
+npx prisma migrate dev --name nombre_del_cambio    # genera prisma/migrations/<fecha>_nombre/migration.sql
+git add -A && git commit -m "db: nombre del cambio"
+git push
+
+# El otro:
+git pull
+docker compose restart app                         # el entrypoint aplica las migraciones solas
+```
+
+Si se le rompe algo, **no te pide un dump**: corre `npm run docker:reset` y vuelve al estado del
+primer día. Para un cambio de datos (no de estructura), ponelo en `prisma/seed.mts`: así el reset
+lo reproduce igual. Un dump solo hace falta si querés pasar datos reales que no están en el repo.
+
+Reglas para el que trabaja el front:
+
+- No corras `npm run db:seed` ni `prisma migrate reset` sobre una BD con datos: borra todo.
+- No corras `docker compose down -v` salvo que quieras empezar de cero.
+- Si rompés algo: `npm run docker:reset` y listo.
+
 ### Cambios de base de datos: local → producción
 
 El flujo para que un cambio de estructura llegue a producción es:
 
 1. **Modificá el schema** en `prisma/schema.prisma` (es la fuente de verdad).
-2. **Probá en local** contra tu Postgres Docker: `npx prisma db push` y verificá con `npm run dev` y/o TablePlus.
+2. **Generá la migration** en local contra tu Postgres Docker con `npm run db:migrate` y verificá
+   con `npm run dev` y/o TablePlus.
 3. **Subí el cambio**: `git commit` + `git push`. Al deployar en Vercel se ejecuta `vercel-build`,
    que genera el schema de deploy y corre `prisma db push` contra **Neon** → la estructura se aplica
    en producción.
 
-> `prisma db push` sincroniza **estructura** (no copia filas). No apuntes tu `.env` local a la base
-> de producción: usá siempre la base Docker local. Si un cambio es destructivo (borrar/renombrar
+> En local y en Docker se usan **migraciones versionadas** (`prisma/migrations/`); el deploy de
+> Vercel todavía usa `prisma db push` contra Neon porque usa un schema de deploy generado. Ninguno
+> de los dos copia filas: solo sincronizan estructura. No apuntes tu `.env` local a la base de
+> producción: usá siempre la base Docker local. Si un cambio es destructivo (borrar/renombrar
 > columnas), revisá el aviso de Prisma antes de aplicarlo.
 
 > **Zona horaria:** las fechas se formatean en el servidor. Para ver las horas de Argentina,
@@ -433,10 +487,13 @@ La app ya viene preparada:
 | `npm run build` | Build de producción + chequeo de tipos |
 | `npm run start` | Sirve el build |
 | `npm run lint` | ESLint |
-| `npm run db:push` | Crea/actualiza las tablas del SQLite local |
-| `npm run db:seed` | Carga los datos de ejemplo |
+| `npm run db:migrate` | Genera y aplica una migration nueva (quién administra la BD) |
+| `npm run db:migrate:deploy` | Aplica las migraciones sin generar nuevas (setup / contenedor) |
+| `npm run db:backup` | Guarda un dump en `backups/` antes de migrar |
+| `npm run db:seed` | Carga los datos de ejemplo (¡borra los datos existentes!) |
 | `npm run db:studio` | Prisma Studio |
-| `npm run db:reset` | Borra todo y vuelve a seedear |
+| `npm run db:reset` | Borra la base, reaplica migraciones y vuelve a seedear |
+| `npm run docker:reset` | Borra el volumen Docker y levanta todo desde cero |
 
 ---
 

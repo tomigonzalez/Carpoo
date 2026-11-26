@@ -1,0 +1,11 @@
+# Dueño de la base de datos y de la infraestructura.
+# GitHub pide la revisión de @tomigonzalez para cualquier cambio en estos archivos:
+# así un PR del front nunca puede alterar el schema, el seed ni las migraciones
+# sin que pase por una revisión explícita.
+
+/prisma/                       @tomigonzalez
+/scripts/docker-entrypoint.sh  @tomigonzalez
+/scripts/backup-bd.ps1         @tomigonzalez
+/docker-compose*.yml           @tomigonzalez
+/Dockerfile*                   @tomigonzalez
+/.env.example                  @tomigonzalez
