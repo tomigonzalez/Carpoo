@@ -220,18 +220,63 @@ puerto `5433`, usuario/base/clave `carpoo`.
 
 ### Todo en Docker (app + base)
 
-Si querés levantar también el front en Docker (mismo comando para BD y app):
+Un solo comando levanta Postgres y la app, **sin crear `.env` ni correr `db push` a mano**:
 
 ```bash
-docker compose -f docker-compose.dev.yml up --build
-# primera vez / tras cambios de schema:
-docker compose -f docker-compose.dev.yml exec app npx prisma db push
+docker compose up --build -d
 ```
+
+El entrypoint del contenedor genera un `AUTH_SECRET` (lo guarda en un volumen, así sobrevive a
+reinicios), aplica el schema con `prisma db push` y carga los datos de ejemplo **solo si la base
+está vacía**. Si querés pasar variables propias (Twilio, Google, etc.), copiá `.env.example` a
+`.env` y descomentá la línea `env_file` en `docker-compose.dev.yml`.
 
 Atajos npm: `npm run docker:up` (app+db), `npm run docker:up:db` (solo DB),
 `npm run docker:down`. La app queda en [http://localhost:3000](http://localhost:3000) y la DB
-sigue accesible desde TablePlus en `localhost:5433`. Dentro de Docker la app usa el host `db:5432`
-(configurado en el compose), así que tu `.env` local puede seguir apuntando a `localhost:5433`.
+sigue accesible desde TablePlus en `localhost:5433`. Si esos puertos están ocupados:
+
+```bash
+APP_PORT=3001 DB_PORT=5434 docker compose up --build -d
+# Windows PowerShell:
+$env:APP_PORT="3001"; $env:DB_PORT="5434"; docker compose up --build -d
+```
+
+### Pasarle la app a un amigo
+
+La forma más limpia es por Git (así recibe también los arreglos de seguridad):
+
+```bash
+# 1. En tu máquina, subí la rama:
+git checkout fix/seguridad-bloque-0
+git push -u origin fix/seguridad-bloque-0
+
+# 2. Tu amigo, con Docker Desktop instalado:
+git clone -b fix/seguridad-bloque-0 https://github.com/tomigonzalez/Carpoo.git
+cd Carpoo
+docker compose up --build -d
+```
+
+Después entra a [http://localhost:3000](http://localhost:3000) y usa **Acceso de prueba** con
+`maria@ejemplo.com` (o cualquiera del seed). Para verificar el teléfono, el código aparece en
+pantalla porque no hay Twilio configurado.
+
+Comandos útiles para él:
+
+| Comando | Qué hace |
+| --- | --- |
+| `docker compose logs -f app` | Ver los logs de la app. |
+| `docker compose restart app` | Reiniciar la app (sin borrar datos). |
+| `docker compose down` | Apagar todo, conservando la base. |
+| `docker compose down -v` | Apagar y **borrar la base** (para volver al seed). |
+
+Si no querés usar Git, también podés mandar un ZIP del repo (sin `node_modules`, `.next` ni `.env`):
+`.dockerignore` ya evita que esos archivos entren a la imagen, pero el ZIP se arma desde el host:
+
+```bash
+git archive --format=zip -o Carpoo.zip HEAD
+```
+
+El amigo descomprime, entra a la carpeta y corre `docker compose up --build -d`.
 
 ### Cambios de base de datos: local → producción
 

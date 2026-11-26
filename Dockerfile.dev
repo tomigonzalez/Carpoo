@@ -12,9 +12,12 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm ci
 
-# El resto del código llega por el bind mount en docker-compose.
+# Arranque: genera AUTH_SECRET, aplica el schema, siembra si hace falta y
+# levanta el servidor. El código llega por el bind mount del compose.
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 3000
 ENV NEXT_TELEMETRY_DISABLED=1
-
-# Regenera el cliente Prisma (por si cambió el schema) y levanta el dev server.
-CMD ["sh", "-c", "npx prisma generate && npx next dev --hostname 0.0.0.0"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npx", "next", "dev", "--hostname", "0.0.0.0"]
