@@ -7,14 +7,7 @@ import { Alerta } from "@/components/ui";
 import { BotonEnviar } from "@/components/BotonEnviar";
 
 /** Botón para solicitar asiento. El conductor debe aceptar antes de ocupar un lugar. */
-export function ReservarAsiento({
-  tripId,
-}: {
-  tripId: string;
-  driverName?: string;
-  driverPhone?: string | null;
-  mensajeWhatsApp?: string;
-}) {
+export function ReservarAsiento({ tripId }: { tripId: string }) {
   const [estado, accion] = useActionState(requestSeat, emptyActionState);
 
   if (estado.ok) {

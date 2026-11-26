@@ -13,6 +13,8 @@ const ERRORES: Record<string, string> = {
   facebook: "No pudimos completar el ingreso con Facebook. Probá de nuevo.",
   estado: "La sesión de ingreso venció. Probá de nuevo.",
   config: "Ese ingreso no está configurado todavía.",
+  cuenta:
+    "Ese email ya pertenece a otra cuenta. Ingresá con el método con el que te registraste.",
 };
 
 export default async function IngresarPage({ searchParams }: PageProps<"/ingresar">) {

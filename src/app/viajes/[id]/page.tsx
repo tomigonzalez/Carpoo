@@ -234,12 +234,7 @@ export default async function ViajePage({ params }: PageProps<"/viajes/[id]">) {
             Se llenaron todos los asientos. Mirá otros viajes disponibles para el mismo día.
           </Alerta>
         ) : (
-          <ReservarAsiento
-            tripId={trip.id}
-            driverName={trip.driver.name.split(" ")[0]}
-            driverPhone={trip.driver.phone}
-            mensajeWhatsApp={mensajeReserva({ passengerName: user.name, trip })}
-          />
+          <ReservarAsiento tripId={trip.id} />
         )}
       </section>
 

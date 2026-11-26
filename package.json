@@ -9,14 +9,17 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "vercel-build": "node scripts/preparar-postgres.mjs && prisma generate --schema prisma/schema.postgres.prisma && prisma db push --schema prisma/schema.postgres.prisma --skip-generate && next build",
-    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "db:reset": "prisma db push --force-reset && prisma db seed",
+    "db:reset": "prisma migrate reset",
+    "db:backup": "powershell -NoProfile -File scripts/backup-bd.ps1",
     "db:seed:prod": "node scripts/seed-prod.mjs",
     "docker:up": "docker compose -f docker-compose.dev.yml up --build",
     "docker:up:db": "docker compose -f docker-compose.dev.yml up -d db",
     "docker:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:reset": "docker compose down -v && docker compose up --build -d",
     "docker:logs": "docker compose -f docker-compose.dev.yml logs -f app"
   },
   "prisma": {
@@ -26,7 +29,7 @@
     "@prisma/client": "6.19.3",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.12",
-    "next": "16.4.2",
+    "next": "^16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -36,9 +39,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "^16.4.6",
     "prisma": "6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
   }
 }

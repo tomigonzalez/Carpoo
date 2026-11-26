@@ -44,6 +44,12 @@ yarn-error.log*
 /*.dump
 /*.sql
 
+# dumps en cualquier carpeta. Las migraciones de Prisma SÍ se versionan,
+# por eso se excluyen explícitamente con la negación.
+**/*.dump
+**/*.sql
+!/prisma/migrations/**/*.sql
+
 # schema de Postgres generado para el deploy
 /prisma/schema.postgres.prisma
 

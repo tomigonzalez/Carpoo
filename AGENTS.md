@@ -22,8 +22,9 @@ npm run dev        # desarrollo (Turbopack) en http://localhost:3000
 npm run build      # build de producción + chequeo de tipos
 npm run start      # sirve el build de producción
 npm run lint       # ESLint (debe quedar sin warnings)
-npm run db:push    # crea/actualiza tablas según prisma/schema.prisma
-npm run db:seed    # carga datos de ejemplo (prisma/seed.mts)
+npm run db:migrate       # genera y aplica una migration según prisma/schema.prisma
+npm run db:migrate:deploy # aplica migraciones sin generar nuevas
+npm run db:seed          # carga datos de ejemplo (prisma/seed.mts)
 npm run db:studio  # Prisma Studio
 npm run db:reset   # borra todo y vuelve a seedear
 ```
@@ -36,7 +37,7 @@ No hay suite de tests; la verificación es manual contra el servidor.
 1. `npm install` (corre `prisma generate` por `postinstall`).
 2. Copiar `.env.example` → `.env` y completar `AUTH_SECRET`.
 3. Levantar Postgres local: `docker compose -f docker-compose.dev.yml up -d` (puerto 5433).
-4. `npm run db:push` (y opcional `npm run db:seed`).
+4. `npm run db:migrate:deploy` (y opcional `npm run db:seed`).
 5. `npm run dev`.
 
 Emails de prueba (login "Acceso de prueba", sin contraseña): `maria@ejemplo.com`,
@@ -46,7 +47,7 @@ Emails de prueba (login "Acceso de prueba", sin contraseña): `maria@ejemplo.com
 ## Arquitectura
 
 - **Next.js 16.4 (App Router) + Server Actions + React 19 + TypeScript**.
-- **Prisma 6 + PostgreSQL**. Local en Docker (`docker-compose.dev.yml`, puerto 5433); producción en Neon. `prisma/schema.prisma` es la fuente de verdad y `vercel-build` aplica cambios de estructura a producción con `prisma db push`.
+- **Prisma 6 + PostgreSQL**. Local en Docker (`docker-compose.dev.yml`, puerto 5433); producción en Neon. `prisma/schema.prisma` es la fuente de verdad; en local/Docker se usan **migraciones versionadas** (`prisma/migrations/`, entrypoint corre `prisma migrate deploy`) y el deploy de Vercel aplica cambios a producción con `prisma db push` sobre un schema de deploy generado. `.github/CODEOWNERS` reserva `prisma/` y la infra para un único revisor.
 - **Sin librerías de auth**: OAuth propio de Google/Facebook + sesión JWT (`jose`) en cookie
   `httpOnly` `carpoo_sesion`. Todo en `src/lib/`.
 - `cacheComponents: false` en `next.config.ts`: las páginas leen datos vivos de la DB.
@@ -120,7 +121,7 @@ Reglas críticas:
 ## Variables de entorno
 
 `DATABASE_URL`, `APP_URL`, `AUTH_SECRET` (obligatorias). Opcionales: `GOOGLE_CLIENT_ID/SECRET`,
-`FACEBOOK_CLIENT_ID/SECRET`, `DEMO_LOGIN` (default `true` para pruebas; poner `"false"` en
-producción), `TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM` (SMS real; si no están, el código de verificación
-se muestra en pantalla y en consola). Callbacks OAuth:
+`FACEBOOK_CLIENT_ID/SECRET`, `DEMO_LOGIN` (hay que ponerlo explícitamente en `"true"` para el
+demo/local; si falta, queda apagado), `TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM` (SMS real; si no están y
+además `DEMO_LOGIN="true"`, el código se muestra en pantalla —nunca en logs—). Callbacks OAuth:
 `/api/auth/callback/google` y `/api/auth/callback/facebook`.

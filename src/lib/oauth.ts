@@ -18,6 +18,8 @@ export type OAuthProfile = {
   name: string;
   email: string | null;
   image: string | null;
+  /** Google lo informa; Facebook no, así que ahí es false y no vinculamos cuentas. */
+  emailVerified: boolean;
 };
 
 export type ProviderInfo = {
@@ -53,12 +55,33 @@ export function listProviders(): ProviderInfo[] {
   ];
 }
 
-export function callbackUrl(baseUrl: string, id: ProviderId): string {
-  const base = (process.env.APP_URL?.trim() || baseUrl).replace(/\/$/, "");
-  return `${base}/api/auth/callback/${id}`;
+/** Origin público configurado. En producción APP_URL es obligatoria (no Host). */
+function publicOrigin(fallback: string): string {
+  const configurada = process.env.APP_URL?.trim();
+  if (configurada) {
+    try {
+      const url = new URL(configurada);
+      if (url.protocol === "http:" || url.protocol === "https:") return url.origin;
+    } catch {
+      // Sigue con el fallback de desarrollo.
+    }
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("APP_URL falta o es inválida; es obligatoria en producción.");
+  }
+  return new URL(fallback).origin;
 }
 
-export function buildAuthorizeUrl(id: ProviderId, redirectUri: string, state: string): string {
+export function callbackUrl(baseUrl: string, id: ProviderId): string {
+  return `${publicOrigin(baseUrl)}/api/auth/callback/${id}`;
+}
+
+export function buildAuthorizeUrl(
+  id: ProviderId,
+  redirectUri: string,
+  state: string,
+  codeChallenge?: string,
+): string {
   const { clientId } = credentials(id);
   const params = new URLSearchParams({
     client_id: clientId,
@@ -71,6 +94,11 @@ export function buildAuthorizeUrl(id: ProviderId, redirectUri: string, state: st
   if (id === "google") {
     params.set("access_type", "online");
     params.set("prompt", "select_account");
+    // PKCE S256: Google lo acepta en el flujo de servidor y ata el code a esta app.
+    if (codeChallenge) {
+      params.set("code_challenge", codeChallenge);
+      params.set("code_challenge_method", "S256");
+    }
     return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   }
 
@@ -81,20 +109,24 @@ export async function exchangeCode(
   id: ProviderId,
   code: string,
   redirectUri: string,
+  codeVerifier?: string,
 ): Promise<OAuthProfile> {
   const { clientId, clientSecret } = credentials(id);
 
   if (id === "google") {
+    const tokenBody = new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    });
+    if (codeVerifier) tokenBody.set("code_verifier", codeVerifier);
+
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-      }),
+      body: tokenBody,
     });
     if (!tokenRes.ok) throw new Error("Google rechazó el código de acceso.");
     const { access_token } = (await tokenRes.json()) as { access_token?: string };
@@ -108,6 +140,7 @@ export async function exchangeCode(
       sub: string;
       name?: string;
       email?: string;
+      email_verified?: boolean;
       picture?: string;
     };
 
@@ -117,25 +150,31 @@ export async function exchangeCode(
       name: info.name?.trim() || info.email?.split("@")[0] || "Usuario",
       email: info.email?.toLowerCase() ?? null,
       image: info.picture ?? null,
+      emailVerified: info.email_verified === true,
     };
   }
 
-  const tokenUrl = new URL("https://graph.facebook.com/v21.0/oauth/access_token");
-  tokenUrl.searchParams.set("client_id", clientId);
-  tokenUrl.searchParams.set("client_secret", clientSecret);
-  tokenUrl.searchParams.set("redirect_uri", redirectUri);
-  tokenUrl.searchParams.set("code", code);
-
-  const tokenRes = await fetch(tokenUrl);
+  // POST y header Bearer para que ni el client_secret ni el token queden en una URL.
+  const tokenRes = await fetch("https://graph.facebook.com/v21.0/oauth/access_token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      code,
+    }),
+  });
   if (!tokenRes.ok) throw new Error("Facebook rechazó el código de acceso.");
   const { access_token } = (await tokenRes.json()) as { access_token?: string };
   if (!access_token) throw new Error("Facebook no devolvió el token.");
 
   const infoUrl = new URL("https://graph.facebook.com/v21.0/me");
   infoUrl.searchParams.set("fields", "id,name,email,picture.type(large)");
-  infoUrl.searchParams.set("access_token", access_token);
 
-  const infoRes = await fetch(infoUrl);
+  const infoRes = await fetch(infoUrl, {
+    headers: { authorization: `Bearer ${access_token}` },
+  });
   if (!infoRes.ok) throw new Error("No pudimos leer el perfil de Facebook.");
   const info = (await infoRes.json()) as {
     id: string;
@@ -150,5 +189,7 @@ export async function exchangeCode(
     name: info.name?.trim() || "Usuario",
     email: info.email?.toLowerCase() ?? null,
     image: info.picture?.data?.url ?? null,
+    // Graph no confirma la verificación del email: no lo usamos para vincular cuentas.
+    emailVerified: false,
   };
 }

@@ -11,16 +11,167 @@ No hay perfiles anónimos: cada viaje cuelga de una cuenta real con **foto** y *
 verificado**. Antes de subir a un auto se ve la **reputación** y el **presentismo** de la otra
 persona. **No se cobra nada dentro de la app**: Carpoo solo conecta a las personas.
 
-> ### Proyecto en construcción
-> Esto es un MVP funcional, no un producto terminado. Hay cosas que faltan y cosas que van a
-> cambiar (mirá el [roadmap](#roadmap)). Está publicado como pieza de portafolio.
->
-> ### Hecho a mano con IA
-> Carpoo se construyó **en colaboración con IA, en sesiones de trabajo largas y con ida y vuelta
-> constante**: yo tomaba las decisiones de producto, de diseño y de negocio; la IA escribía código,
-> proponía alternativas y ejecutaba. Fue también una **prueba de hasta dónde llega hoy un agente de
-> código** en un proyecto real: autenticación OAuth propia, transacciones para no sobrevender,
-> diseño completo y despliegue. Todo el código, los textos y este README se escribieron así.
+---
+
+## Para qué sirve este repo
+
+Además de ser un producto, Carpoo es un **entorno de práctica de trabajo en equipo**. Se usa para
+simular, de verdad, el flujo de un equipo de desarrollo:
+
+- una persona administra la base, las migraciones y el deploy;
+- otra trabaja el front **sin permisos** sobre la BD;
+- los cambios llegan por **Pull Request**, pasan por **revisión** y recién después se mergean;
+- cada PR tiene que dejar `lint` y `build` en verde;
+- los problemas se arreglan con un `reset` reproducible, no con magia.
+
+La idea es que quien arranca sin experiencia pueda ganarla **haciendo cambios pequeños a un sistema
+real**, con consecuencias reales pero con un colchón: su propia base descartable y un revisor al
+lado. Cuando algo se rompe, se analiza qué pasó y se vuelve al estado conocido. Eso es trabajar.
+
+> El proyecto nació como MVP y está en camino de ser un producto terminado. La hoja de ruta está
+> dividida en sprints (ver [Roadmap](#roadmap-por-sprints)). Todo el código, los textos y este
+> README se escribieron **en colaboración con IA**, con una persona tomando las decisiones de
+> producto, diseño y negocio.
+
+---
+
+## Roles
+
+| Rol | Hace | No hace |
+| --- | --- | --- |
+| **Admin / Tech Lead** (quien administra) | Dueño de `prisma/`, migraciones, compose, deploy y revisiones. Genera los cambios de BD y los aplica. | Aceptar PRs sin leerlos. |
+| **Dev de front** (quien aprende) | Componentes, pantallas, estilos, formularios y fixes chicos. Abre PRs, responde comentarios, corrige. | Tocar `prisma/`, ejecutar migraciones ni usar credenciales de producción. |
+| **Revisor** | El Admin, en cada PR. Pide cambios, aprueba, mergea. | Aprobar por apuro. |
+
+Cada persona corre la app **en su propia máquina**, con **su propio volumen** de Docker y **su
+propio `AUTH_SECRET`**. Aunque los dos usen el mismo compose, **no comparten base**: es la misma
+receta en dos cocinas distintas. Si el Dev rompe la suya, la del Admin no se entera.
+
+La separación no depende de la confianza: depende de permisos (ver
+[Base de datos: quién la maneja](#base-de-datos-quién-la-maneja)).
+
+---
+
+## Reglas de trabajo (Definition of Done)
+
+Un cambio **no está terminado** hasta que cumpla todo esto:
+
+1. Está en una rama propia (`front/nombre-del-cambio`, `fix/...`), nunca directo en la principal.
+2. El PR dice **qué cambió, por qué y cómo probarlo**. Si es visual, lleva captura.
+3. `npm run lint` y `npm run build` pasan en la máquina de quien hace el PR.
+4. Hay **una revisión aprobada** por el Admin antes de mergear.
+5. No toca archivos de BD salvo que el PR sea explícitamente de BD y lo abra el Admin.
+6. Si cambia una regla de negocio (cupos, reservas, perfiles), se escribe cómo se verificó en la
+   [guía de prueba](#guía-de-prueba-recorrido-de-3-minutos).
+7. Después del merge, quien sigue trabajando hace `git pull`. Los cambios de BD se aplican solos al
+   reiniciar la app.
+
+Convención de commits: `tipo: qué hice` (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`).
+Ejemplo: `fix: mostrar el cupo actualizado al cancelar`.
+
+---
+
+## Flujo de un cambio (para el que empieza)
+
+```bash
+# 1. Traer lo último y crear tu rama
+git checkout main
+git pull
+git checkout -b front/mi-cambio
+
+# 2. Hacer el cambio, verificar, y commitear
+npm run lint
+npm run build
+git add -A
+git commit -m "fix: describir el cambio"
+
+# 3. Publicar la rama
+git push -u origin front/mi-cambio
+
+# 4. Abrir el Pull Request en GitHub y completar la plantilla.
+#    El Admin revisa. Si pide cambios, se hacen nuevos commits sobre la misma rama.
+
+# 5. Aprobado y mergeado: volver a la principal
+git checkout main
+git pull
+```
+
+Si el PR tocó migraciones, después del `git pull` hay que reiniciar la app para que el entrypoint
+aplique los cambios: `docker compose restart app`.
+
+La plantilla de PR vive en `.github/PULL_REQUEST_TEMPLATE.md` y se precarga sola al abrir uno.
+
+---
+
+## Onboarding: día 1
+
+Requisitos: **Node 20.9+** (probado con 22 y 24), npm, **Docker Desktop** y Git.
+
+```bash
+git clone https://github.com/tomigonzalez/Carpoo.git
+cd Carpoo
+docker compose up --build -d
+```
+
+Eso es todo. A los segundos la app está en [http://localhost:3000](http://localhost:3000) con base
+y datos de ejemplo. No hay que crear `.env`, ni instalar Postgres, ni correr migraciones: el
+entrypoint lo hace.
+
+Para ver los logs o apagar:
+
+| Comando | Para qué |
+| --- | --- |
+| `docker compose logs -f app` | Logs en vivo. |
+| `docker compose restart app` | Reiniciar sin borrar nada. |
+| `docker compose down` | Apagar, conservando la base. |
+| `npm run docker:reset` | **Botón de deshacer:** borrar la base y volver al seed. |
+
+Entrá con **Acceso de prueba** y `maria@ejemplo.com`. Para verificar el teléfono, el código aparece
+en pantalla porque no hay Twilio configurado. Después seguí la
+[guía de prueba](#guía-de-prueba-recorrido-de-3-minutos).
+
+**No hagas esto el día 1:** `npm run db:seed` sobre datos existentes (borra todo), `prisma migrate
+reset` y `docker compose down -v` salvo que quieras empezar de cero.
+
+---
+
+## Base de datos: quién la maneja
+
+La BD la administra **una sola persona**. El que trabaja el front solo corre comandos: nunca
+"acomodo" la BD a mano. Los datos que quiere que vea el equipo están en `prisma/seed.mts`, así que
+se reproducen desde el repo.
+
+Hay tres protecciones para que un push accidental no modifique la BD de alguien:
+
+1. **`.github/CODEOWNERS`** marca `prisma/`, los compose, el Dockerfile y `.env.example` como
+   archivos de un único dueño. Configuración que se hace una vez en GitHub: *Settings → Branches →
+   Branch protection rule* de la rama principal, con **"Require a pull request before merging"** y
+   **"Require review from Code Owners"**. Si un PR toca esos archivos, GitHub pide la aprobación del
+   Admin.
+2. **`.gitignore`** ignora dumps (`**/*.sql`, `**/*.dump`) en cualquier carpeta. Las migraciones de
+   Prisma están exceptuadas (`!/prisma/migrations/**/*.sql`) para que sí se versionen.
+3. **El entrypoint usa `migrate deploy`, nunca `db push`**. Editar `schema.prisma` no cambia la BD:
+   solo se aplican los archivos de `prisma/migrations/`. Un schema que llegue por git sin su
+   migration correspondiente no hace nada.
+
+### Cambio de estructura (lo hace el Admin)
+
+```bash
+npm run db:backup                                  # dump en backups/ antes de tocar nada
+# editar prisma/schema.prisma
+npm run db:migrate -- --name nombre_del_cambio      # genera prisma/migrations/<fecha>_nombre/migration.sql
+git add -A
+git commit -m "db: nombre del cambio"
+git push
+```
+
+El Dev hace `git pull` + `docker compose restart app` y el entrypoint aplica la migration.
+
+### Cambio de datos (no de estructura)
+
+Se edita `prisma/seed.mts` y se pushea. Con `npm run docker:reset` cualquiera lo reproduce.
+Un dump (`npm run db:backup` genera uno en `backups/`) solo hace falta para pasar datos reales que
+no están en el repo; nunca se commitea.
 
 ---
 
@@ -86,9 +237,9 @@ queda lugar. Carpoo resuelve tres cosas concretas:
 
 **Cuenta y confianza**
 - Login en un clic con **Google** o **Facebook** (OAuth propio, sin librerías de auth).
-- **Acceso de prueba** por email para demos, sin contraseña.
+- **Acceso de prueba** por email para demos, sin contraseña (opt-in con `DEMO_LOGIN="true"`).
 - Verificación del teléfono con **código de 6 dígitos** (en modo demo se muestra en pantalla;
-  con Twilio configurado, llega por SMS).
+  con Twilio configurado, llega por SMS/WhatsApp).
 - Reputación de 1 a 5 estrellas con comentario y perfil público.
 
 **Experiencia**
@@ -105,10 +256,11 @@ queda lugar. Carpoo resuelve tres cosas concretas:
 | Framework | **Next.js 16.4** (App Router, Server Actions) | Un solo proyecto para pantallas y lógica; los formularios no necesitan una API aparte. |
 | UI | **React 19.3** + **TypeScript** | Tipado de punta a punta y componentes modernos. |
 | Estilos | **Tailwind CSS v4** + tokens propios en `globals.css` | Diseño consistente con variables CSS y clases reutilizables. |
-| Base de datos | **Prisma 6** + **SQLite** en local / **Postgres** en producción | SQLite es un archivo: cero instalación para probar. En Vercel, Postgres. |
+| Base de datos | **Prisma 6** + **PostgreSQL** (Docker en local, Neon en producción) | Un solo motor en todos los ambientes, con migraciones versionadas. |
 | Sesión | **jose** (JWT HS256 en cookie `httpOnly`) | Liviano, sin dependencias pesadas. |
-| OAuth | Implementación propia en `src/lib/oauth.ts` | Flujo *authorization code* de Google y Facebook, sin librerías extra. |
-| SMS | **Twilio** (opcional) | Verificación real del teléfono; sin claves, el código se muestra en pantalla. |
+| OAuth | Implementación propia en `src/lib/oauth.ts` | *Authorization code*, state firmado y PKCE S256 para Google. |
+| Verificación | `src/lib/phone-code.ts` + `src/lib/notify.ts` | Código hasheado con HMAC, 5 intentos y envío opcional por Twilio. |
+| Freno de intentos | `src/lib/rate-limit.ts` | En memoria por ahora; en producción se cambia por Redis/Upstash. |
 | Tipografías | **Bricolage Grotesque** + **Instrument Sans** (autohospedadas, OFL) | Sin depender de Google Fonts en tiempo de ejecución. |
 
 > Las páginas leen datos vivos (viajes, cupos, reservas), por eso `cacheComponents: false` y render
@@ -120,37 +272,47 @@ queda lugar. Carpoo resuelve tres cosas concretas:
 
 ```
 Carpoo/
+├─ .github/
+│  ├─ CODEOWNERS                 # Dueño de prisma/ y de la infra
+│  └─ PULL_REQUEST_TEMPLATE.md   # Checklist de cada PR
 ├─ prisma/
-│  ├─ schema.prisma          # Modelo de datos (User, Trip, Reservation, Review)
-│  ├─ seed.mts               # Datos de ejemplo (npm run db:seed)
-│  └─ dev.db                 # SQLite local (generado, no se commitea)
-├─ public/
-│  ├─ avatares/              # Logo y fotos de ejemplo en SVG
-│  └─ fuentes/               # Tipografías .woff2 + su licencia
+│  ├─ schema.prisma              # Modelo de datos (fuente de verdad)
+│  ├─ migrations/                # Migraciones versionadas (se commitean)
+│  └─ seed.mts                   # Datos de ejemplo (npm run db:seed)
 ├─ scripts/
-│  └─ preparar-postgres.mjs  # Genera el schema Postgres solo para el deploy
+│  ├─ preparar-postgres.mjs      # Genera el schema Postgres para el deploy
+│  ├─ docker-entrypoint.sh       # Migra, siembra si hace falta y levanta la app
+│  └─ backup-bd.ps1              # Dump en backups/ antes de migrar
+├─ public/
+│  ├─ avatares/                  # Logo y fotos de ejemplo en SVG
+│  └─ fuentes/                   # Tipografías .woff2 + su licencia
 ├─ src/
-│  ├─ app/                   # Rutas (App Router)
-│  │  ├─ page.tsx            # Inicio: hero + últimos viajes
-│  │  ├─ buscar/             # Buscador de asientos
-│  │  ├─ viajes/[id]/        # Detalle: cupos en vivo, reservar, reseñas
-│  │  ├─ publicar/           # Publicar un viaje
-│  │  ├─ mis-viajes/         # Panel del conductor
-│  │  ├─ mis-reservas/       # Reservas del pasajero
-│  │  ├─ perfil/             # Foto, teléfono, auto y reputación
-│  │  ├─ usuarios/[id]/      # Perfil público
-│  │  ├─ ingresar/           # Login Google/Facebook + acceso de prueba
-│  │  └─ api/                # OAuth (signin/callback) y cupos en vivo (JSON)
-│  ├─ components/            # Header, barra inferior, tarjetas y formularios
+│  ├─ app/                       # Rutas (App Router)
+│  │  ├─ page.tsx                # Inicio: hero + últimos viajes
+│  │  ├─ buscar/                 # Buscador de asientos
+│  │  ├─ viajes/[id]/            # Detalle: cupos en vivo, reservar, reseñas
+│  │  ├─ publicar/               # Publicar un viaje
+│  │  ├─ mis-viajes/             # Panel del conductor
+│  │  ├─ mis-reservas/           # Reservas del pasajero
+│  │  ├─ perfil/                 # Foto, teléfono, auto y reputación
+│  │  ├─ usuarios/[id]/          # Perfil público
+│  │  ├─ ingresar/               # Login Google/Facebook + acceso de prueba
+│  │  └─ api/                    # OAuth (signin/callback) y cupos en vivo (JSON)
+│  ├─ components/                # Header, barra inferior, tarjetas y formularios
 │  └─ lib/
-│     ├─ actions/            # Server Actions: auth, trips, reservations
-│     ├─ session.ts          # Cookie de sesión + regla de perfil completo
-│     ├─ oauth.ts            # Google y Facebook (authorization code)
-│     ├─ queries.ts          # Consultas de lectura
-│     ├─ stats.ts            # Reputación, presentismo e historial
-│     ├─ validate.ts         # Teléfonos, links de WhatsApp, limpieza de texto
-│     ├─ messages.ts         # Textos prearmados de WhatsApp
-│     └─ notify.ts           # Códigos de verificación (consola / Twilio)
+│     ├─ actions/                # Server Actions: auth, trips, reservations
+│     ├─ session.ts              # Cookie de sesión + regla de perfil completo
+│     ├─ oauth.ts / oauth-state.ts# Google/Facebook, state firmado y PKCE
+│     ├─ phone-code.ts           # Códigos HMAC + comparación en tiempo constante
+│     ├─ rate-limit.ts           # Freno de intentos por IP
+│     ├─ queries.ts              # Consultas de lectura
+│     ├─ stats.ts                # Reputación, presentismo e historial
+│     ├─ validate.ts             # Teléfonos, links de WhatsApp, limpieza de texto
+│     ├─ format.ts               # Fechas/horas en castellano (solo servidor)
+│     ├─ messages.ts             # Textos prearmados de WhatsApp
+│     ├─ notify.ts               # Envío por Twilio (opcional)
+│     ├─ action-state.ts         # safeNext + estado de los formularios
+│     └─ db.ts                   # Cliente Prisma singleton
 └─ next.config.ts
 ```
 
@@ -168,45 +330,58 @@ Carpoo/
 - **Reserva sin sobreventa**: la aceptación corre en `prisma.$transaction` con un `updateMany`
   condicionado a `seatsTaken < seatsTotal`. Si dos personas aceptan a la vez el último asiento, una
   falla y la otra entra. El viaje pasa a `FULL` solo.
-- **Sin librería de autenticación**: OAuth a mano (3 pasos: redirigir, recibir el `code`,
-  cambiarlo por el perfil) y sesión JWT firmada. Menos dependencias, más control.
+- **Sin librería de autenticación**: OAuth a mano (state firmado, PKCE, `email_verified`) y sesión
+  JWT firmada. Menos dependencias, más control.
 - **Validación siempre en el servidor**: cada Server Action verifica sesión, propiedad del recurso y
   limpia los datos (`cleanText`, `cleanInt`, `normalizePhone`). El cliente no es confiable.
 - **Privacidad del teléfono**: se oculta en las consultas hasta que exista reserva confirmada.
 - **Cupos en vivo**: un endpoint liviano devuelve los asientos cada 7 segundos, sin recargar la
   página.
-- **PostgreSQL en local y en producción**: el schema (`prisma/schema.prisma`) es la fuente de verdad.
-  En local la base corre en Docker (`docker-compose.dev.yml`); en Vercel/Neon la actualiza el deploy.
-  `scripts/preparar-postgres.mjs` genera la copia que usa el build y agrega la conexión directa
-  (`directUrl`) cuando existe.
+- **Un solo motor de BD**: PostgreSQL en local (Docker) y en producción (Vercel/Neon). El schema es
+  la fuente de verdad y las migraciones viajan en git.
 
 ---
 
 ## Correr el proyecto en local
 
-Requisitos: **Node 20.9+** (probado con 22 y 24), npm y **Docker Desktop** (para la base Postgres).
+### Todo en Docker (recomendado)
+
+Un solo comando levanta Postgres y la app, **sin crear `.env` ni correr migraciones a mano**:
 
 ```bash
-# 1. Dependencias
-npm install
+docker compose up --build -d
+```
 
-# 2. Variables de entorno
+El entrypoint genera un `AUTH_SECRET` (persiste en un volumen), aplica las migraciones con
+`prisma migrate deploy` y carga los datos de ejemplo **solo si la base está vacía**. Si querés pasar
+variables propias (Twilio, Google, etc.), copiá `.env.example` a `.env` y descomentá la línea
+`env_file` en `docker-compose.dev.yml`.
+
+La app queda en [http://localhost:3000](http://localhost:3000) y la DB accesible desde TablePlus en
+`localhost:5433` (usuario/base/clave `carpoo`). Si esos puertos están ocupados:
+
+```bash
+APP_PORT=3001 DB_PORT=5434 docker compose up --build -d
+# Windows PowerShell:
+$env:APP_PORT="3001"; $env:DB_PORT="5434"; docker compose up --build -d
+```
+
+### App en la máquina, base en Docker
+
+Para debuggear con hot reload sin el contenedor de la app:
+
+```bash
+npm install
 cp .env.example .env        # Windows: Copy-Item .env.example .env
 # Generá AUTH_SECRET y pegalo en .env:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
-# 3. Levantar Postgres local (puerto 5433) y crear/actualizar tablas
-docker compose -f docker-compose.dev.yml up -d
-npm run db:push
-
-# (opcional) datos de ejemplo locales
-npm run db:seed
-
-# 4. Levantar la app (con hot reload)
+docker compose -f docker-compose.dev.yml up -d db
+npm run db:migrate:deploy
 npm run dev
 ```
 
-Abrí [http://localhost:3000](http://localhost:3000). `.env` mínimo para probar:
+`.env` mínimo:
 
 ```env
 DATABASE_URL="postgresql://carpoo:carpoo@localhost:5433/carpoo"
@@ -215,59 +390,8 @@ AUTH_SECRET="<la clave larga que generaste>"
 DEMO_LOGIN="true"
 ```
 
-Podés conectarte a la base con **TablePlus** (o trabajar directo con Docker): host `localhost`,
-puerto `5433`, usuario/base/clave `carpoo`.
-
-### Todo en Docker (app + base)
-
-Si querés levantar también el front en Docker (mismo comando para BD y app):
-
-```bash
-docker compose -f docker-compose.dev.yml up --build
-# primera vez / tras cambios de schema:
-docker compose -f docker-compose.dev.yml exec app npx prisma db push
-```
-
-Atajos npm: `npm run docker:up` (app+db), `npm run docker:up:db` (solo DB),
-`npm run docker:down`. La app queda en [http://localhost:3000](http://localhost:3000) y la DB
-sigue accesible desde TablePlus en `localhost:5433`. Dentro de Docker la app usa el host `db:5432`
-(configurado en el compose), así que tu `.env` local puede seguir apuntando a `localhost:5433`.
-
-### Cambios de base de datos: local → producción
-
-El flujo para que un cambio de estructura llegue a producción es:
-
-1. **Modificá el schema** en `prisma/schema.prisma` (es la fuente de verdad).
-2. **Probá en local** contra tu Postgres Docker: `npx prisma db push` y verificá con `npm run dev` y/o TablePlus.
-3. **Subí el cambio**: `git commit` + `git push`. Al deployar en Vercel se ejecuta `vercel-build`,
-   que genera el schema de deploy y corre `prisma db push` contra **Neon** → la estructura se aplica
-   en producción.
-
-> `prisma db push` sincroniza **estructura** (no copia filas). No apuntes tu `.env` local a la base
-> de producción: usá siempre la base Docker local. Si un cambio es destructivo (borrar/renombrar
-> columnas), revisá el aviso de Prisma antes de aplicarlo.
-
 > **Zona horaria:** las fechas se formatean en el servidor. Para ver las horas de Argentina,
 > arrancá con `TZ=America/Argentina/Buenos_Aires` (Linux/macOS) o configurá la zona en Windows.
-
-### Entrar a probar
-
-En **/ingresar** hay dos caminos:
-
-- **Acceso de prueba**: escribís un email y entrás sin contraseña (ideal para ver la app rápido).
-- **Google / Facebook**: solo si cargaste las claves (ver abajo).
-
-Emails del seed:
-
-| Email | Persona | Para qué sirve |
-| --- | --- | --- |
-| `maria@ejemplo.com` | María Fernández | Conductora con viajes, reputación 5.0 y presentismo. |
-| `jorge@ejemplo.com` | Jorge Almada | Un viaje completo y otro con lugares libres. |
-| `lucia@ejemplo.com` | Lucía Rossi | Pasajera con reservas e historial. |
-| `diego@ejemplo.com` | Diego Sosa | Tiene una ausencia registrada (presentismo bajo). |
-| `ana@ejemplo.com` | Ana Gutiérrez | **Teléfono sin verificar**: muestra el flujo "Completá tu perfil". |
-
-Cualquier otro email crea una persona nueva de prueba.
 
 ---
 
@@ -285,21 +409,33 @@ Cualquier otro email crea una persona nueva de prueba.
    código de verificación aparece **en pantalla** en modo demo.
 7. **Reputación**: en un viaje ya realizado, calificá de 1 a 5 estrellas.
 
+Emails del seed:
+
+| Email | Persona | Para qué sirve |
+| --- | --- | --- |
+| `maria@ejemplo.com` | María Fernández | Conductora con viajes, reputación 5.0 y presentismo. |
+| `jorge@ejemplo.com` | Jorge Almada | Un viaje completo y otro con lugares libres. |
+| `lucia@ejemplo.com` | Lucía Rossi | Pasajera con reservas e historial. |
+| `diego@ejemplo.com` | Diego Sosa | Tiene una ausencia registrada (presentismo bajo). |
+| `ana@ejemplo.com` | Ana Gutiérrez | **Teléfono sin verificar**: muestra el flujo "Completá tu perfil". |
+
+Cualquier otro email crea una persona nueva de prueba.
+
 ---
 
 ## Variables de entorno
 
 | Variable | Obligatoria | Para qué |
 | --- | --- | --- |
-| `DATABASE_URL` | Sí | SQLite local (`file:./dev.db`) o Postgres en producción. |
-| `DIRECT_URL` / `DATABASE_URL_UNPOOLED` | No | Conexión directa para `prisma db push`. Supabase usa `DIRECT_URL`; Neon inyecta `DATABASE_URL_UNPOOLED`. |
+| `DATABASE_URL` | Sí | Postgres: `postgresql://carpoo:carpoo@localhost:5433/carpoo` en local; Vercel inyecta la de producción. |
+| `DIRECT_URL` / `DATABASE_URL_UNPOOLED` | No | Conexión directa para `prisma db push` en el deploy. Supabase usa `DIRECT_URL`; Neon inyecta `DATABASE_URL_UNPOOLED`. |
 | `APP_URL` | Sí | URL pública; se usa para armar los callbacks de OAuth. |
-| `AUTH_SECRET` | Sí | Firma la cookie de sesión. Larga y aleatoria. |
-| `DEMO_LOGIN` | No | `"false"` apaga el acceso de prueba. En el demo público queda `"true"`. |
+| `AUTH_SECRET` | Sí | Firma la cookie de sesión y los códigos del teléfono. Larga y aleatoria. |
+| `DEMO_LOGIN` | No | Hay que ponerlo en `"true"` para el demo/local; si falta, el acceso de prueba queda apagado. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | No | Login con Google. Sin claves, el botón aparece deshabilitado. |
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | No | Login con Facebook. |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` | No | Envío real del código por **SMS** o **WhatsApp** (Twilio). Si `TWILIO_FROM` empieza con `whatsapp:`, se envía por WhatsApp. Sin proveedor, el código se muestra en pantalla (pruebas). |
-| `TWILIO_WHATSAPP_FROM` | No | Alternativa a `TWILIO_FROM` para WhatsApp, ej. `whatsapp:+14155238886`. |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` | No | Envío real del código por SMS o WhatsApp. Si `TWILIO_FROM` empieza con `whatsapp:`, va por WhatsApp. |
+| `TWILIO_WHATSAPP_FROM` | No | Alternativa a `TWILIO_FROM`, ej. `whatsapp:+14155238886`. |
 
 ### Callbacks de OAuth
 
@@ -313,69 +449,131 @@ Se cargan en la consola de cada proveedor y tienen que coincidir con `APP_URL`.
 La app ya soporta enviar el código por WhatsApp usando Twilio. Para activarlo:
 
 1. Creá una cuenta en [Twilio](https://www.twilio.com/try-twilio) y obtené `TWILIO_ACCOUNT_SID` y `TWILIO_AUTH_TOKEN`.
-2. **Para probar rápido (sandbox, gratis):** en la consola de Twilio activá el *WhatsApp Sandbox*, enviá desde tu WhatsApp el mensaje de unión que te indique al número del sandbox y cargá:
+2. **Para probar rápido (sandbox, gratis):** activá el *WhatsApp Sandbox*, enviá desde tu WhatsApp
+   el mensaje de unión que te indique y cargá:
    ```env
    TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"   # número del sandbox de Twilio
    ```
-   > El sandbox solo entrega mensajes a números que hicieron el "join". Sirve para probar que funciona, no para usuarios reales.
-3. **Para usuarios reales (producción):** necesitás un *sender* de WhatsApp aprobado (número propio o el de Twilio) y, según el caso, una plantilla de autenticación aprobada por Meta. La opción más simple para OTP es [Twilio Verify](https://www.twilio.com/docs/verify) con el canal WhatsApp.
-4. Cargá las variables en Vercel y hacé **Redeploy**. Con un proveedor configurado, el código **ya no se muestra en pantalla**: se envía de verdad.
+   > El sandbox solo entrega mensajes a números que hicieron el "join". Sirve para probar, no para
+   > usuarios reales.
+3. **Para usuarios reales:** necesitás un *sender* aprobado y, según el caso, una plantilla de
+   autenticación aprobada por Meta. La opción más simple para OTP es
+   [Twilio Verify](https://www.twilio.com/docs/verify) con el canal WhatsApp.
+4. Cargá las variables en Vercel y hacé **Redeploy**. Con proveedor configurado, el código **ya no
+   se muestra en pantalla**.
 
 ---
 
 ## Despliegue en Vercel
 
-Vercel no puede usar SQLite (el sistema de archivos es efímero), así que el deploy usa **Postgres**.
-La app ya viene preparada:
+El deploy usa **Postgres** (Neon/Supabase) porque el sistema de archivos es efímero.
 
-1. **Importá el repo** en [vercel.com/new](https://vercel.com/new) (framework: Next.js, sin tocar
-   nada).
-2. **Creá la base** (cualquiera de las dos opciones sirve):
-
-   - **Neon desde Vercel** (la más simple): en el proyecto → *Storage* → *Create Database* →
-     **Postgres (Neon)**, plan gratis. Vercel inyecta `DATABASE_URL` sola y no hay que configurar
-     nada más.
-   - **Supabase**: creá un proyecto en [supabase.com](https://supabase.com) y copiá dos cadenas
-     desde *Project Settings → Database → Connection string*:
-     - **Transaction pooler** (puerto `6543`), agregando `?pgbouncer=true&connection_limit=1` →
-       va en `DATABASE_URL`. Es la que usa la app en cada request.
-     - **Direct connection** o **Session pooler** (puerto `5432`) → va en `DIRECT_URL`. La usa
-       `prisma db push` para crear las tablas durante el build.
+1. **Importá el repo** en [vercel.com/new](https://vercel.com/new) (framework: Next.js).
+2. **Creá la base**:
+   - **Neon desde Vercel** (la más simple): *Storage → Create Database → Postgres (Neon)*, plan
+     gratis. Vercel inyecta `DATABASE_URL` sola.
+   - **Supabase**: creá el proyecto y copiá dos cadenas desde *Project Settings → Database →
+     Connection string*:
+     - **Transaction pooler** (puerto `6543`), con `?pgbouncer=true&connection_limit=1` →
+       `DATABASE_URL`.
+     - **Direct connection** o **Session pooler** (puerto `5432`) → `DIRECT_URL`.
 
      ```env
      DATABASE_URL="postgresql://postgres.<ref>:<clave>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
      DIRECT_URL="postgresql://postgres.<ref>:<clave>@aws-0-<region>.pooler.supabase.com:5432/postgres"
      ```
-
-3. **Variables de entorno** del proyecto:
+3. **Variables de entorno**:
 
    ```env
    APP_URL="https://tu-proyecto.vercel.app"
    AUTH_SECRET="<clave larga y aleatoria>"
-   DEMO_LOGIN="true"        # para el demo público; "false" en un producto real
+   DEMO_LOGIN="false"       # "true" solo en el demo público
    ```
 
-   > Generá `AUTH_SECRET` con:
-   > `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
-
-4. **Deploy**. El script `vercel-build` se encarga del resto: genera el schema Postgres (agregando
-   `directUrl` si existe `DIRECT_URL` o `DATABASE_URL_UNPOOLED`), crea las tablas
-   (`prisma db push`), compila y publica.
-5. **Datos de ejemplo (opcional)**, una sola vez desde tu máquina, apuntando a la base de
-   producción:
+4. **Deploy**: `vercel-build` genera el schema Postgres (agregando `directUrl` si corresponde),
+   corre `prisma db push` contra la base de producción, compila y publica.
+5. **Datos de ejemplo (opcional)**, una sola vez:
 
    ```bash
    $env:DATABASE_URL="postgresql://..."           # cadena de producción (pooler)
    $env:DIRECT_URL="postgresql://..."             # Supabase: puerto 5432
    $env:DATABASE_URL_UNPOOLED="postgresql://..."  # Neon: la inyecta Vercel
-   npm run db:seed:prod                           # crea las tablas y carga el seed
+   npm run db:seed:prod
    ```
 
-6. Si querés que funcione el login con Google/Facebook en producción, agregá los callbacks del
-   dominio de Vercel en cada consola. Si no, el **acceso de prueba** sigue funcionando.
+6. Si querés login con Google/Facebook en producción, cargá los callbacks del dominio de Vercel.
 
-> En producción `DEMO_LOGIN="true"` permite que cualquiera entre con un email. Para el demo de
-> portafolio es a propósito; en un producto real va en `"false"`.
+> En local y en Docker se usan **migraciones versionadas** (`prisma/migrations/`); el deploy de
+> Vercel todavía usa `prisma db push` contra Neon con un schema de deploy generado. Ninguno copia
+> filas: solo sincronizan estructura. **Nunca apuntes tu `.env` local a producción.** Unificar ese
+> último paso con migrations está en el roadmap.
+
+> Con `DEMO_LOGIN="true"` cualquiera entra con un email a una cuenta **que no sea real** (las
+> cuentas con contraseña, Google o Facebook nunca se pisan). Está bien para el demo; en un producto
+> real va en `"false"` o se omite la variable.
+
+---
+
+## Seguridad
+
+- Sesión con **JWT HS256** firmado en cookie **`httpOnly`**, `SameSite=Lax` y `Secure` en
+  producción. Sin `AUTH_SECRET` no se pueden falsificar sesiones.
+- Cada Server Action verifica **sesión y propiedad** del recurso (por ejemplo, solo el conductor
+  dueño del viaje puede cancelarlo).
+- Aceptar un asiento usa **transacción + condición de cupo**: no se puede sobrevender.
+- Códigos de verificación generados con PRNG criptográfico y guardados como **HMAC**, con 5
+  intentos y espaciado entre reenvíos. Nunca se escriben en logs.
+- OAuth con **state firmado**, **PKCE S256** para Google y `email_verified`: un email ajeno nunca se
+  pisa. Redirecciones validadas contra el `origin` (sin open redirects).
+- Rate limit en login, registro, demo y verificación. Es en memoria: en producción se cambia por
+  un store compartido.
+- El teléfono del conductor se oculta hasta que exista reserva confirmada o asistida.
+- Los textos se limpian y se limitan en longitud antes de guardarse.
+- No hay pagos, comisiones ni datos de tarjetas: el dinero se arregla entre las partes.
+
+---
+
+## Roadmap por sprints
+
+Cada ítem se convierte en un **issue** con criterio de aceptación, se trabajó en una rama y se cerró
+con un PR revisado. Así se ve el progreso real, no una lista de deseos.
+
+### Sprint 0 — Cimientos (hecho)
+
+- [x] MVP funcional: publicar, buscar, pedir, aceptar, cupos en vivo, reseñas y WhatsApp.
+- [x] Seguridad: demo opt-in, OTP seguro, OAuth firmado con PKCE, rate limit y sin fuga de teléfono.
+- [x] Docker: base + app con un solo comando y BD descartable.
+- [x] Migraciones versionadas, CODEOWNERS y backup antes de migrar.
+
+### Sprint 1 — Integridad del dominio
+
+- [ ] Un mismo viaje no puede quedar en estados contradictorios (`FULL` con cupos libres, `DONE`
+  con reservas `PENDING`).
+- [ ] Cancelaciones y reembolsos de cupo centralizados en una sola regla, con tests.
+- [ ] Reseñas solo entre personas que realmente compartieron un viaje asistido.
+- [ ] Tests de las reglas críticas (sobreventa, perfil incompleto, privacidad del teléfono).
+
+### Sprint 2 — Calidad y confianza
+
+- [ ] CI en GitHub Actions: `lint`, `build` y tests en **cada PR** (el checkbox deja de ser manual).
+- [ ] Observabilidad: errores y métricas sin loguear secretos ni códigos.
+- [ ] Rate limit compartido (Redis/Upstash) para deploys con varias instancias.
+- [ ] Unificar el deploy con `prisma migrate deploy` en vez de `db push`.
+
+### Sprint 3 — Notificaciones y retención
+
+- [ ] Web Push (PWA) para avisar al conductor de una solicitud, con bandeja in-app de respaldo.
+- [ ] Recordatorios 24 h y 2 h antes de la salida.
+- [ ] Retención del asiento: la solicitud reserva el lugar 30 minutos y se libera sola.
+
+### Sprint 4 — Crecimiento y moderación
+
+- [ ] Denuncias y moderación (el campo `isAdmin` ya está previsto).
+- [ ] Chat interno para no salir a WhatsApp.
+- [ ] Viajes recurrentes y búsqueda por cercanía.
+- [ ] Verificación más fuerte (documento) para viajes largos.
+
+**Descartado por ahora:** pagos y comisiones. La idea es que sea gratis para quien viaja.
 
 ---
 
@@ -387,49 +585,17 @@ La app ya viene preparada:
 | `npm run build` | Build de producción + chequeo de tipos |
 | `npm run start` | Sirve el build |
 | `npm run lint` | ESLint |
-| `npm run db:push` | Crea/actualiza las tablas del SQLite local |
-| `npm run db:seed` | Carga los datos de ejemplo |
+| `npm run db:migrate` | Genera y aplica una migration nueva (Admin) |
+| `npm run db:migrate:deploy` | Aplica migraciones sin generar nuevas (setup / contenedor) |
+| `npm run db:backup` | Guarda un dump en `backups/` antes de migrar |
+| `npm run db:seed` | Carga los datos de ejemplo (¡borra los datos existentes!) |
 | `npm run db:studio` | Prisma Studio |
-| `npm run db:reset` | Borra todo y vuelve a seedear |
+| `npm run db:reset` | Borra la base, reaplica migraciones y vuelve a seedear |
+| `npm run docker:reset` | Borra el volumen Docker y levanta todo desde cero |
 
 ---
 
-## Seguridad
-
-- Sesión con **JWT HS256** firmado en cookie **`httpOnly`**, `SameSite=Lax` y `Secure` en
-  producción. Sin `AUTH_SECRET` no se pueden falsificar sesiones.
-- Cada Server Action verifica **sesión y propiedad** del recurso (por ejemplo, solo el conductor
-  dueño del viaje puede cancelarlo).
-- Aceptar un asiento usa **transacción + condición de cupo**: no se puede sobrevender.
-- El teléfono del conductor se oculta hasta que exista reserva confirmada o asistida.
-- Los textos se limpian y se limitan en longitud antes de guardarse.
-- No hay pagos, comisiones ni datos de tarjetas: el dinero se arregla entre las partes.
-
----
-
-## Roadmap
-
-**Ya está:** publicar, buscar, pedir asiento con aprobación del conductor, cupos en vivo, login con
-Google/Facebook, verificación de teléfono, perfil con foto, reputación, presentismo, WhatsApp y
-estados del viaje.
-
-**Próximo:**
-- **Notificaciones sin entrar a la web**: Web Push (PWA) para que al conductor le llegue el aviso de
-  una solicitud al teléfono, con la bandeja in-app como respaldo. Es gratis y no depende de terceros.
-- **Recordatorios** 24 h y 2 h antes de la salida.
-- **Retención del asiento**: que la solicitud reserve el lugar por 30 minutos y se libere sola si el
-  conductor no responde.
-- **Chat interno** para no salir a WhatsApp.
-- **Denuncias y moderación** (el campo `isAdmin` ya está previsto en el modelo).
-- **Viajes recurrentes** (misma ruta, todos los días) y búsqueda por cercanía.
-- **Verificación más fuerte** (documento) para viajes largos.
-
-**Descartado por ahora:** pagos dentro de la app y comisiones. La idea es que sea gratis para quien
-viaja.
-
----
-
-## Sobre este proyecto
+## Origen del proyecto
 
 Lo hice para resolver algo concreto de mi zona: moverme entre pueblos sin depender de un grupo de
 WhatsApp. Me interesaba especialmente la parte de confianza (identidad verificada, reputación,

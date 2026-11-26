@@ -1,14 +1,16 @@
 # Entorno de desarrollo local: base + app, todo en Docker.
 # También podés correr solo la base y usar `npm run dev` en tu máquina.
 #
-# Uso (todo junto):
-#   docker compose -f docker-compose.dev.yml up --build
-#   (en otra terminal, la primera vez o tras cambios de schema)
-#   docker compose -f docker-compose.dev.yml exec app npx prisma db push
+# Uso (todo junto, sin crear .env ni correr comandos extra):
+#   docker compose up --build -d
+#   (el entrypoint aplica el schema y siembra solo si la base está vacía)
 #
 # Uso (solo base, app en tu máquina):
 #   docker compose -f docker-compose.dev.yml up -d db
 #   npm run db:push && npm run dev
+#
+# Si querés configurar variables propias (Twilio, Google, etc.), copiá
+# .env.example a .env y descomentá la línea `env_file` del servicio app.
 #
 # Conexión DB desde tu máquina/TablePlus:
 #   postgresql://carpoo:carpoo@localhost:5433/carpoo
@@ -27,7 +29,7 @@ services:
       POSTGRES_DB: carpoo
     ports:
       # 5433 en el host para no chocar con un Postgres local en Windows (5432).
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       # En Postgres 18+ el mount va en /var/lib/postgresql (no /data)
       - carpoo_pgdata:/var/lib/postgresql
@@ -45,22 +47,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    env_file:
-      - .env
+    # env_file:
+    #   - .env   # descomentar si querés pasar variables propias (ver arriba)
     environment:
       # Dentro de Docker la DB se alcanza por el nombre del servicio, puerto interno 5432.
       DATABASE_URL: postgresql://carpoo:carpoo@db:5432/carpoo
-      APP_URL: http://localhost:3000
+      APP_URL: "http://localhost:${APP_PORT:-3000}"
+      DEMO_LOGIN: "true"
       # Hot reload fiable con bind mounts en Windows.
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     volumes:
       - .:/app
       # Preservan dependencias/binarios Linux dentro del contenedor.
       - app_node_modules:/app/node_modules
       - app_next:/app/.next
+      # AUTH_SECRET generado por el entrypoint: persiste entre reinicios.
+      - app_secrets:/run/carpoo
 
 volumes:
   carpoo_pgdata:
@@ -68,4 +73,5 @@ volumes:
     name: carpoo_pgdata
   app_node_modules:
   app_next:
+  app_secrets:
 

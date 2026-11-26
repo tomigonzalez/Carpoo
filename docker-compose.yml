@@ -1,0 +1,10 @@
+# Entrega "andá con un comando": levanta la base y la app juntas.
+#
+#   docker compose up --build -d
+#   http://localhost:3000
+#
+# Requiere Docker Desktop con Compose v2.20+ (cualquier versión actual).
+# La configuración real vive en docker-compose.dev.yml.
+
+include:
+  - docker-compose.dev.yml

@@ -27,8 +27,10 @@ model User {
   // Verificación de identidad
   phone         String? // teléfono normalizado, ej: +5491122334455
   phoneVerified Boolean  @default(false)
-  phoneCode     String? // código de 6 dígitos pendiente
-  phoneCodeExp  DateTime?
+  phoneCode        String? // HMAC del código de 6 dígitos (nunca en claro)
+  phoneCodeExp     DateTime?
+  phoneCodeAttempts Int     @default(0) // intentos fallidos del código vigente
+  phoneCodeSentAt  DateTime? // para espaciar los reenvíos
 
   // Datos del auto (opcionales hasta que ofrezca un viaje)
   carModel      String?
